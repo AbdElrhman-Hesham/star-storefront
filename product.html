@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product — STAR</title>
+  <meta name="star-api-url" content="/api"/>
+  <meta name="star-whatsapp" content="201000000000"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/styles.css"/>
+  <script src="js/site-defaults.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/promotions.js"></script>
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', 'YOUR_META_PIXEL_ID');
+  fbq('track', 'PageView');
+  fbq('track', 'ViewContent');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=YOUR_META_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+  <!-- End Meta Pixel Code -->
+  <style>
+    .pdp-topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;background:#fff;border-bottom:1px solid var(--border2);box-shadow:var(--shadow-sm)}
+    .pdp-topbar .nav-logo-img{height:58px;width:auto;max-width:200px;object-fit:contain;transform:none}
+    .pdp-topbar-actions{display:flex;align-items:center;gap:12px}
+    .pdp-back{color:var(--text-dim);font-weight:700;font-size:0.85rem;white-space:nowrap}
+    .pdp-wrap{max-width:1080px;margin:0 auto;padding:32px 24px 80px}
+    .pdp-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+    .pdp-media{border:1px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg);aspect-ratio:1/1}
+    .pdp-media img{width:100%;height:100%;object-fit:cover;display:block}
+    .pdp-cat{display:inline-block;font-size:0.72rem;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+    .pdp-title{font-size:2rem;font-weight:900;color:var(--navy);line-height:1.15;margin-bottom:14px}
+    .pdp-price-row{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+    .pdp-price{font-size:1.7rem;font-weight:900;color:var(--navy)}
+    .pdp-old{font-size:1.05rem;color:var(--text-muted);text-decoration:line-through}
+    .pdp-save{background:rgba(22,163,74,0.1);color:#16a34a;border:1px solid rgba(22,163,74,0.25);border-radius:50px;padding:3px 12px;font-size:0.76rem;font-weight:800}
+    .pdp-media{position:relative}
+    .pdp-promo-badge{position:absolute;top:14px;right:14px;z-index:2;display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;font-size:0.74rem;font-weight:900;padding:7px 15px;border-radius:50px;box-shadow:0 6px 18px rgba(220,38,38,0.35)}
+    [dir="rtl"] .pdp-promo-badge{right:auto;left:14px}
+    .pdp-offer{display:inline-flex;align-items:center;gap:6px;font-size:0.9rem;font-weight:800;color:#dc2626;margin-bottom:14px}
+    .pdp-timer{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-bottom:18px;background:var(--navy);color:#fff;border-radius:14px;padding:12px 16px;max-width:360px}
+    .pdp-timer-label{font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;opacity:0.85}
+    .pdp-timer-clock{display:flex;gap:10px;margin-inline-start:auto}
+    .pdp-timer-cell{display:inline-flex;flex-direction:column;align-items:center;min-width:32px;line-height:1}
+    .pdp-timer-cell b{font-size:1.2rem;font-weight:900;font-variant-numeric:tabular-nums}
+    .pdp-timer-cell i{font-size:0.6rem;font-style:normal;opacity:0.75;text-transform:uppercase;margin-top:3px}
+    .pdp-stock{font-size:0.85rem;font-weight:700;margin-bottom:18px}
+    .pdp-stock.in{color:#16a34a}.pdp-stock.low{color:#d97706}.pdp-stock.out{color:#dc2626}
+    .pdp-desc{color:var(--text-dim);line-height:1.8;margin-bottom:26px;white-space:pre-line}
+    .pdp-cta{width:100%;max-width:360px;padding:17px 28px;background:var(--gold);color:#fff;border:none;border-radius:50px;font-weight:900;font-size:1.02rem;cursor:pointer;font-family:inherit;box-shadow:0 8px 26px var(--gold-glow);transition:all .2s}
+    .pdp-cta:hover{background:var(--gold-dark);transform:translateY(-1px)}
+    .pdp-cta:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+    /* Reviews */
+    .pdp-reviews{margin-top:56px;border-top:1px solid var(--border2);padding-top:36px}
+    .pdp-reviews h2{font-size:1.4rem;font-weight:900;color:var(--navy);margin-bottom:6px}
+    .pdp-rev-summary{display:flex;align-items:center;gap:10px;color:var(--text-muted);font-size:0.9rem;margin-bottom:26px}
+    .pdp-rev-avg{font-size:1.3rem;font-weight:900;color:var(--navy)}
+    .pdp-stars{color:#f5b301;letter-spacing:2px}
+    .pdp-rev-list{display:flex;flex-direction:column;gap:14px;margin-bottom:40px}
+    .pdp-rev-card{background:#fff;border:1px solid var(--border3);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm)}
+    .pdp-rev-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+    .pdp-rev-name{font-weight:800;color:var(--navy)}
+    .pdp-rev-date{font-size:0.75rem;color:var(--text-muted)}
+    .pdp-rev-text{color:var(--text-dim);line-height:1.7;font-size:0.92rem}
+    .pdp-rev-empty{color:var(--text-muted);font-size:0.9rem;padding:8px 0 24px}
+    .pdp-form{background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--radius-lg);padding:26px;max-width:560px}
+    .pdp-form h3{font-size:1.05rem;font-weight:900;color:var(--navy);margin-bottom:16px}
+    .pdp-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+    .pdp-field label{font-size:0.8rem;font-weight:700;color:var(--text-dim)}
+    .pdp-field input,.pdp-field textarea{background:#fff;border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:inherit;font-size:0.9rem;color:var(--text);outline:none;transition:border-color .2s}
+    .pdp-field input:focus,.pdp-field textarea:focus{border-color:var(--gold)}
+    .pdp-rating-input{display:flex;gap:6px;font-size:1.6rem;cursor:pointer}
+    .pdp-rating-input span{color:var(--border);transition:color .15s}
+    .pdp-rating-input span.on{color:#f5b301}
+    .pdp-form-note{font-size:0.82rem;margin-top:6px}
+    .pdp-form-note.ok{color:#16a34a}.pdp-form-note.err{color:#dc2626}
+    .pdp-empty{text-align:center;padding:80px 24px;color:var(--text-muted)}
+    .pdp-empty a{color:var(--gold);font-weight:700}
+    @media(max-width:760px){
+      .pdp-topbar{padding:12px 16px}
+      .pdp-topbar .nav-logo-img{height:50px;max-width:170px}
+      .pdp-wrap{padding:24px 16px 96px}
+      .pdp-grid{grid-template-columns:1fr;gap:24px}
+      .pdp-title{font-size:1.6rem}
+      .pdp-cta{max-width:none}
+      .pdp-form{padding:20px 16px}
+      .pdp-field input,.pdp-field textarea{font-size:16px}
+    }
+    [dir="rtl"] .pdp-cat,[dir="rtl"] .pdp-title,[dir="rtl"] .pdp-desc{text-align:right}
+  </style>
+</head>
+<body>
+  <nav class="pdp-topbar">
+    <a href="index.html" class="nav-logo"><img src="logo.png" alt="STAR" class="nav-logo-img"/></a>
+    <div class="pdp-topbar-actions">
+      <a href="index.html" class="pdp-back" data-i18n="pdp_back">Back to store</a>
+      <button class="lang-toggle-btn" onclick="toggleLanguage(); location.reload();" aria-label="Switch language" data-i18n="nav_lang">عربي</button>
+    </div>
+  </nav>
+
+  <main class="pdp-wrap" id="pdpRoot">
+    <div class="pdp-empty" id="pdpLoading">…</div>
+  </main>
+
+  <script src="js/product.js"></script>
+</body>
+</html>

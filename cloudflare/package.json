@@ -1,0 +1,18 @@
+{
+  "name": "star-cloudflare",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-assets.js",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply star-storefront --local",
+    "db:migrate:remote": "wrangler d1 migrations apply star-storefront --remote",
+    "secrets:generate": "node scripts/set-production-secrets.js",
+    "check": "wrangler deploy --dry-run --outdir .wrangler-build"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

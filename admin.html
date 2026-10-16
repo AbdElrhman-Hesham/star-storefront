@@ -1,0 +1,4082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>STAR - Admin Dashboard</title>
+  <meta name="star-api-url" content="/api"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/admin.css"/>
+  <script src="js/site-defaults.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/promotions.js"></script>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <form class="login-box" id="loginForm">
+    <div class="admin-lang-switch admin-lang-login" aria-label="Admin language switcher">
+      <button class="admin-lang-btn" type="button" data-lang="en" onclick="setAdminLanguage('en')">EN</button>
+      <button class="admin-lang-btn" type="button" data-lang="ar" onclick="setAdminLanguage('ar')">AR</button>
+    </div>
+    <div class="login-logo">
+      <img src="logo.png" alt="STAR97 logo" class="login-logo-img" id="loginLogoImg"/>
+    </div>
+    <p class="login-sub">Sign in to manage orders and products.</p>
+    <label for="loginUsername">Username</label>
+    <input id="loginUsername" type="text" autocomplete="username" required/>
+    <label for="loginPassword">Password</label>
+    <input id="loginPassword" type="password" autocomplete="current-password" required/>
+    <button class="login-btn" id="loginBtn" type="submit">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+  </form>
+</div>
+
+<!-- -- ADMIN SHELL ------------------------------- -->
+<div class="shell" id="shell">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <img src="logo.png" alt="STAR97 logo" class="topbar-logo-img" id="topbarLogoImg"/>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-lang-switch admin-lang-topbar" aria-label="Admin language switcher">
+        <button class="admin-lang-btn" type="button" data-lang="en" onclick="setAdminLanguage('en')">EN</button>
+        <button class="admin-lang-btn" type="button" data-lang="ar" onclick="setAdminLanguage('ar')">AR</button>
+      </div>
+      <span class="topbar-badge" id="topbarUser">ADMIN</span>
+      <button class="logout-btn" type="button" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tabOrders" onclick="switchTab('orders')">Orders</button>
+    <button class="tab-btn" id="tabProducts" onclick="switchTab('products')">Products</button>
+    <button class="tab-btn" id="tabPromotions" onclick="switchTab('promotions')">Sales &amp; Promotions</button>
+    <button class="tab-btn" id="tabContent" onclick="switchTab('content')">Content</button>
+    <button class="tab-btn" id="tabReviews" onclick="switchTab('reviews')">Reviews</button>
+  </div>
+
+  <div class="main">
+
+    <!-- -- REVIEWS TAB --------------------------- -->
+    <div class="tab-content" id="contentReviews">
+      <div class="page-title" id="revTitle">Product Reviews</div>
+      <div class="page-sub" id="revSub">Approve or remove customer reviews before they show on product pages.</div>
+      <div class="toolbar">
+        <select class="filter-select" id="reviewFilter" onchange="loadAdminReviews()"></select>
+        <button class="refresh-btn" id="revRefresh" onclick="loadAdminReviews()">Refresh</button>
+      </div>
+      <div id="reviewsList"></div>
+    </div>
+
+    <!-- -- ORDERS TAB --------------------------- -->
+    <div class="tab-content active" id="contentOrders">
+      <div class="page-title">Orders Dashboard</div>
+      <div class="page-sub">Manage all incoming STAR orders in real-time.</div>
+
+      <!-- Revenue highlight -->
+      <div class="revenue-highlight">
+        <div class="rev-info">
+          <span class="rev-label">Total Revenue</span>
+          <span class="rev-num" id="sRevenue">-</span>
+        </div>
+        <div class="rev-meta"><span class="rev-orders-label">Orders</span> <strong id="sTotalOrders">-</strong></div>
+      </div>
+
+      <!-- Stats (click a card to filter the list) -->
+      <div class="stats-row">
+        <div class="stat-card blue clickable stat-active" onclick="filterByStat('')"><div class="stat-label">Total</div><div class="stat-num" id="sTotal">-</div></div>
+        <div class="stat-card blue clickable" onclick="filterByStat('new')"><div class="stat-label">New</div><div class="stat-num" id="sNew">-</div></div>
+        <div class="stat-card purple clickable" onclick="filterByStat('confirmed')"><div class="stat-label">Confirmed</div><div class="stat-num" id="sConfirmed">-</div></div>
+        <div class="stat-card orange clickable" onclick="filterByStat('shipping')"><div class="stat-label">Shipping</div><div class="stat-num" id="sShipping">-</div></div>
+        <div class="stat-card green clickable" onclick="filterByStat('delivered')"><div class="stat-label">Delivered</div><div class="stat-num" id="sDelivered">-</div></div>
+        <div class="stat-card red clickable" onclick="filterByStat('cancelled')"><div class="stat-label">Cancelled</div><div class="stat-num" id="sCancelled">-</div></div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <input class="toolbar-search" id="searchInput" type="text" placeholder="Search by name, phone, city, order ID..." oninput="debounceSearch()"/>
+        <select class="filter-select" id="statusFilter" onchange="loadOrders(1)">
+          <option value="">All Statuses</option>
+          <option value="new">New</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="shipping">Shipping</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <button class="refresh-btn" onclick="loadOrders(); loadStats()">Refresh</button>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="table-wrap" id="ordersTableWrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#ID</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>City</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody">
+            <tr class="loading-row"><td colspan="8">Loading orders...</td></tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="ordersPagination" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- -- PRODUCTS TAB --------------------------- -->
+    <div class="tab-content" id="contentProducts">
+      <div class="page-title">Product Management</div>
+      <div class="page-sub">Add, edit, and manage your product catalog.</div>
+
+      <div class="toolbar">
+        <button class="add-product-btn" onclick="openProductModal()">+ Add New Product</button>
+        <button class="refresh-btn" onclick="loadProducts()">Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Active</th>
+              <th>Featured</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productsBody">
+            <tr class="loading-row"><td colspan="8">Loading products...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- -- SALES & PROMOTIONS TAB --------------------------- -->
+    <div class="tab-content" id="contentPromotions">
+      <div class="page-title" id="promoPageTitle">Sales &amp; Promotions</div>
+      <div class="page-sub" id="promoPageSub">Create time-boxed offers, discounts, and buy-X-get-Y deals. Pricing is always re-checked on the server at checkout.</div>
+
+      <div class="toolbar">
+        <button class="add-product-btn" onclick="openPromotionModal()" id="promoAddBtn">+ New Promotion</button>
+        <button class="refresh-btn" onclick="loadPromotions()" id="promoRefreshBtn">Refresh</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr id="promoTableHead">
+              <th>Offer</th>
+              <th>Type</th>
+              <th>Targets</th>
+              <th>Window</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="promotionsBody">
+            <tr class="loading-row"><td colspan="8">Loading promotions...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="page-title" id="codePageTitle" style="margin-top:38px">Promo Codes</div>
+      <div class="page-sub" id="codePageSub">Discount codes customers type at checkout. Applied on top of product offers; re-checked on the server.</div>
+      <div class="toolbar">
+        <button class="add-product-btn" onclick="openPromoCodeModal()" id="codeAddBtn">+ New Code</button>
+        <button class="refresh-btn" onclick="loadPromoCodes()" id="codeRefreshBtn">Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr id="codeTableHead">
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Min order</th>
+              <th>Window</th>
+              <th>Uses</th>
+              <th>Status</th>
+              <th>On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="promoCodesBody">
+            <tr class="loading-row"><td colspan="8">Loading codes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- -- CONTENT TAB --------------------------- -->
+    <div class="tab-content" id="contentContent">
+      <div class="page-title">Content & Storefront</div>
+      <div class="page-sub">Control the storefront copy, links, phone numbers, logo, and business info without touching code.</div>
+
+      <div class="cms-overview">
+        <div class="cms-overview-card">
+          <span class="cms-overview-label">Text Keys</span>
+          <strong class="cms-overview-value" id="contentStatTotal">-</strong>
+        </div>
+        <div class="cms-overview-card">
+          <span class="cms-overview-label">Visible</span>
+          <strong class="cms-overview-value" id="contentStatVisible">-</strong>
+        </div>
+        <div class="cms-overview-card">
+          <span class="cms-overview-label">Unsaved</span>
+          <strong class="cms-overview-value" id="contentStatDirty">0</strong>
+        </div>
+      </div>
+
+      <div class="cms-grid">
+        <section class="cms-panel">
+          <div class="cms-panel-head">
+            <div>
+              <h3>Storefront Settings</h3>
+              <p>Business identity, contact channels, hero numbers, and metadata.</p>
+            </div>
+            <button class="save-btn" type="button" onclick="saveStorefrontSettings()">Save Settings</button>
+          </div>
+
+          <form class="prod-form cms-form" id="storefrontForm">
+            <div class="cms-form-section">
+              <div class="cms-form-section-title">Brand</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sfSiteName">Site Name</label>
+                  <input type="text" id="sfSiteName" placeholder="STAR"/>
+                </div>
+                <div class="form-group">
+                  <label for="sfLogoUrl">Logo Image</label>
+                  <div class="cms-upload-field">
+                    <input type="text" id="sfLogoUrl" placeholder="logo.png" oninput="syncImagePreview('sfLogoUrl', 'sfLogoPreviewImg', 'sfLogoPreviewEmpty')"/>
+                    <button class="secondary-btn" type="button" onclick="triggerImageUpload('sfLogoFile')">Upload</button>
+                    <input type="file" id="sfLogoFile" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" data-target-input="sfLogoUrl" data-preview-img="sfLogoPreviewImg" data-preview-empty="sfLogoPreviewEmpty" data-status="sfLogoUploadStatus" data-kind="logo" onchange="handleImageUpload(event)" hidden/>
+                  </div>
+                  <div class="cms-upload-status" id="sfLogoUploadStatus">PNG, JPG, WEBP, or GIF up to 5 MB.</div>
+                  <div class="cms-image-preview">
+                    <div class="cms-image-preview-empty" id="sfLogoPreviewEmpty">No logo selected yet.</div>
+                    <img id="sfLogoPreviewImg" alt="Logo preview" style="display:none"/>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:16px">
+                <label for="sfMetaTitle">Meta Title</label>
+                <input type="text" id="sfMetaTitle" placeholder="Browser title and SEO title"/>
+              </div>
+
+              <div class="form-group">
+                <label for="sfMetaDescription">Meta Description</label>
+                <textarea id="sfMetaDescription" placeholder="SEO description shown in search results"></textarea>
+              </div>
+            </div>
+
+            <div class="cms-form-section">
+              <div class="cms-form-section-title">Contact & Social</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sfWhatsappNumber">WhatsApp Number</label>
+                  <input type="text" id="sfWhatsappNumber" placeholder="201XXXXXXXXX"/>
+                </div>
+                <div class="form-group">
+                  <label for="sfSupportPhone">Support Phone</label>
+                  <input type="text" id="sfSupportPhone" placeholder="201XXXXXXXXX"/>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sfFacebookUrl">Facebook URL</label>
+                  <input type="text" id="sfFacebookUrl" placeholder="https://facebook.com/..."/>
+                </div>
+                <div class="form-group">
+                  <label for="sfInstagramUrl">Instagram URL</label>
+                  <input type="text" id="sfInstagramUrl" placeholder="https://instagram.com/..."/>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sfTiktokUrl">TikTok URL</label>
+                  <input type="text" id="sfTiktokUrl" placeholder="https://tiktok.com/..."/>
+                </div>
+                <div class="form-group">
+                  <label for="sfWhatsappMessage">WhatsApp Default Message</label>
+                  <input type="text" id="sfWhatsappMessage" placeholder="Hello STAR, I want to place an order."/>
+                </div>
+              </div>
+            </div>
+
+            <div class="cms-form-section">
+              <div class="cms-form-section-title">Storefront Numbers</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sfHeroOrders">Hero Orders Delivered</label>
+                  <input type="text" id="sfHeroOrders" placeholder="500+"/>
+                </div>
+                <div class="form-group">
+                  <label for="sfHeroRating">Hero Rating</label>
+                  <input type="text" id="sfHeroRating" placeholder="4.9★"/>
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-bottom:0">
+                <div class="form-group">
+                  <label for="sfHeroCod">Hero Cash on Delivery</label>
+                  <input type="text" id="sfHeroCod" placeholder="100%"/>
+                </div>
+                <div class="form-group">
+                  <label for="sfCurrencyCode">Currency Code</label>
+                  <input type="text" id="sfCurrencyCode" placeholder="EGP"/>
+                </div>
+              </div>
+            </div>
+          </form>
+        </section>
+
+        <section class="cms-panel">
+          <div class="cms-panel-head">
+            <div>
+              <h3>All Storefront Text</h3>
+              <p>Edit copy while looking at the live storefront, then fall back to the full text library when needed.</p>
+            </div>
+            <div class="cms-head-actions">
+              <button class="secondary-btn" type="button" onclick="collapseAllContentGroups()">Collapse</button>
+              <button class="secondary-btn" type="button" onclick="expandAllContentGroups()">Expand</button>
+              <button class="save-btn" type="button" onclick="saveTranslations()">Save Text</button>
+            </div>
+          </div>
+
+          <div class="cms-visual-workspace">
+            <section class="cms-preview-card">
+              <div class="cms-preview-card-head">
+                <div>
+                  <h4>Visual Editor</h4>
+                  <p>Click any highlighted text in the site preview to edit it.</p>
+                </div>
+                <div class="cms-head-actions">
+                  <div class="cms-view-switch">
+                    <button class="cms-view-btn active" type="button" data-preview-lang="en" onclick="setPreviewLanguage('en')">Preview EN</button>
+                    <button class="cms-view-btn" type="button" data-preview-lang="ar" onclick="setPreviewLanguage('ar')">Preview AR</button>
+                  </div>
+                  <button class="secondary-btn" type="button" onclick="reloadContentPreview()">Reload Preview</button>
+                </div>
+              </div>
+              <div class="cms-preview-frame-wrap">
+                <iframe id="contentPreviewFrame" class="cms-preview-frame" title="Storefront preview" loading="lazy"></iframe>
+              </div>
+            </section>
+
+            <aside class="cms-selection-card">
+              <div class="cms-selection-head">
+                <h4>Selected Text</h4>
+                <p>Edit the current selection in both languages.</p>
+              </div>
+
+              <div class="cms-selection-empty" id="contentSelectionEmpty">
+                Click any highlighted text inside the preview to start editing.
+              </div>
+
+              <div class="cms-selection-panel" id="contentSelectionPanel" style="display:none">
+                <div class="cms-selection-key" id="selectedContentKeyLabel">-</div>
+
+                <div class="cms-locale-card">
+                  <label class="cms-locale-label" for="selectedContentEn">English</label>
+                  <textarea class="content-textarea" id="selectedContentEn" placeholder="English text..." oninput="updateSelectedContentValue('en', this.value)"></textarea>
+                </div>
+
+                <div class="cms-locale-card">
+                  <label class="cms-locale-label" for="selectedContentAr">Arabic</label>
+                  <textarea class="content-textarea" id="selectedContentAr" placeholder="Arabic text..." oninput="updateSelectedContentValue('ar', this.value)"></textarea>
+                </div>
+
+                <div class="cms-selection-actions">
+                  <button class="secondary-btn" type="button" onclick="focusSelectedContentInList()">Show In Library</button>
+                </div>
+              </div>
+              <div class="cms-selection-panel" id="mediaSelectionPanel" style="display:none">
+                <div class="cms-selection-key" id="selectedMediaKeyLabel">-</div>
+
+                <div class="cms-locale-card">
+                  <label class="cms-locale-label" for="selectedMediaUrl">Image URL</label>
+                  <div class="cms-upload-field">
+                    <input type="text" id="selectedMediaUrl" placeholder="assets/images/example.png" oninput="updateSelectedMediaValue(this.value)"/>
+                    <button class="secondary-btn" type="button" onclick="triggerImageUpload('selectedMediaFile')">Upload</button>
+                    <input type="file" id="selectedMediaFile" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" data-target-input="selectedMediaUrl" data-preview-img="selectedMediaPreviewImg" data-preview-empty="selectedMediaPreviewEmpty" data-status="selectedMediaUploadStatus" data-selected-media="1" onchange="handleImageUpload(event)" hidden/>
+                  </div>
+                  <div class="cms-upload-status" id="selectedMediaUploadStatus">PNG, JPG, WEBP, or GIF up to 5 MB.</div>
+                  <div class="cms-image-preview">
+                    <div class="cms-image-preview-empty" id="selectedMediaPreviewEmpty">No image selected yet.</div>
+                    <img id="selectedMediaPreviewImg" alt="Selected image preview" style="display:none"/>
+                  </div>
+                </div>
+
+                <div class="cms-selection-actions">
+                  <button class="secondary-btn" type="button" onclick="focusSelectedMediaInList()">Show In Page Images</button>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="cms-toolbar">
+            <input class="toolbar-search" id="contentSearchInput" type="text" placeholder="Search by key or text..." oninput="filterContentRows()"/>
+            <select class="filter-select" id="contentGroupFilter" onchange="filterContentRows()">
+              <option value="">All sections</option>
+            </select>
+            <div class="cms-view-switch" id="contentViewSwitch">
+              <button class="cms-view-btn active" type="button" data-mode="split" onclick="setContentViewMode('split')">Both</button>
+              <button class="cms-view-btn" type="button" data-mode="en" onclick="setContentViewMode('en')">English</button>
+              <button class="cms-view-btn" type="button" data-mode="ar" onclick="setContentViewMode('ar')">Arabic</button>
+            </div>
+            <button class="refresh-btn" type="button" onclick="loadSiteConfig()">Reload</button>
+          </div>
+
+          <div class="cms-editor mode-split" id="contentBody">
+            <div class="loading-row">Loading content...</div>
+          </div>
+        </section>
+      </div>
+
+      <section class="cms-panel cms-structured-panel">
+        <div class="cms-panel-head">
+          <div>
+            <h3>Structured Sections</h3>
+            <p>Control repeated storefront blocks like gallery slides, reviews, FAQ items, and warranty cards.</p>
+          </div>
+          <button class="save-btn" type="button" onclick="saveContentBlocks()">Save Sections</button>
+        </div>
+        <div class="cms-editor" id="contentBlocksBody">
+          <div class="loading-row">Loading section controls...</div>
+        </div>
+      </section>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- -- ORDER DETAIL MODAL --------------------------- -->
+<div class="overlay" id="orderOverlay">
+  <div class="modal" id="orderModal">
+    <div class="modal-header">
+      <h2 id="modalOrderTitle">Order Details</h2>
+      <button class="modal-close" onclick="closeOrderModal()">x</button>
+    </div>
+    <div class="modal-body">
+      <!-- Customer Info -->
+      <div class="modal-section">
+        <div class="modal-section-title">Customer Information</div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-label">Name</span><span class="info-value" id="mName">-</span></div>
+          <div class="info-item"><span class="info-label">Phone</span><span class="info-value" id="mPhone">-</span></div>
+          <div class="info-item"><span class="info-label">City</span><span class="info-value" id="mCity">-</span></div>
+          <div class="info-item"><span class="info-label">Address</span><span class="info-value" id="mAddress">-</span></div>
+          <div class="info-item"><span class="info-label">Notes</span><span class="info-value" id="mNotes">-</span></div>
+          <div class="info-item"><span class="info-label">Date</span><span class="info-value" id="mDate">-</span></div>
+        </div>
+      </div>
+      <!-- Order Items -->
+      <div class="modal-section">
+        <div class="modal-section-title">Order Items</div>
+        <table class="items-table">
+          <thead>
+            <tr><th>Product</th><th>Options</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+          </thead>
+          <tbody id="mItems"></tbody>
+        </table>
+      </div>
+      <!-- Price Summary -->
+      <div class="modal-section">
+        <div class="modal-section-title">Price Summary</div>
+        <div class="price-summary">
+          <div class="price-row"><span>Subtotal</span><span class="val" id="mSubtotal">-</span></div>
+          <div class="price-row"><span>Shipping</span><span class="val" id="mShipping">-</span></div>
+          <div class="price-row"><span>Discount</span><span class="val" id="mDiscount">-</span></div>
+          <div class="price-row total"><span>Total</span><span class="val" id="mTotal">-</span></div>
+        </div>
+      </div>
+      <!-- Admin Notes -->
+      <div class="modal-section">
+        <div class="modal-section-title">Admin Notes</div>
+        <textarea class="admin-notes-area" id="mAdminNotes" placeholder="Add private notes about this order..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a class="action-btn wa-btn" id="mWaBtn" href="#" target="_blank">WhatsApp</a>
+      <select class="filter-select" id="mStatusSelect" style="padding:10px 14px">
+        <option value="new">New</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="shipping">Shipping</option>
+        <option value="delivered">Delivered</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <button class="action-btn" onclick="saveOrderFromModal()" style="border-color:var(--blue);color:var(--blue)">Save</button>
+      <button class="action-btn del-btn" onclick="deleteFromModal()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- -- PRODUCT MODAL --------------------------- -->
+<div class="overlay" id="productOverlay">
+  <div class="modal" id="productModal">
+    <div class="modal-header">
+      <h2 id="productModalTitle">Add Product</h2>
+      <button class="modal-close" onclick="closeProductModal()">x</button>
+    </div>
+    <div class="modal-body">
+      <form class="prod-form" id="productForm" onsubmit="saveProduct(event)">
+        <input type="hidden" id="pId"/>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="pName" placeholder="Product name" required oninput="autoSlug()"/>
+          </div>
+          <div class="form-group">
+            <label>Slug *</label>
+            <input type="text" id="pSlug" placeholder="product-slug" required/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Price (EGP) *</label>
+            <input type="number" id="pPrice" placeholder="299" min="0" required/>
+          </div>
+          <div class="form-group">
+            <label>Old Price (EGP)</label>
+            <input type="number" id="pOldPrice" placeholder="399" min="0"/>
+          </div>
+        </div>
+        <div class="prod-sale-box">
+          <label class="prod-sale-toggle">
+            <input type="checkbox" id="pOnSale" onchange="toggleSaleFields()"/>
+            <span id="pOnSaleLabel">On sale — show a sale price, badge &amp; optional countdown on this product</span>
+          </label>
+          <div class="form-row" id="pSaleFields" style="display:none;margin-top:12px;margin-bottom:0">
+            <div class="form-group">
+              <label id="pSalePriceLabel">Sale price (EGP)</label>
+              <input type="number" id="pSalePrice" min="0" placeholder="199"/>
+            </div>
+            <div class="form-group">
+              <label id="pSaleEndsLabel">Sale ends (optional)</label>
+              <input type="datetime-local" id="pSaleEndsAt"/>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="pCategory" required>
+              <option value="">Select category</option>
+              <option value="Featured">Featured</option>
+              <option value="New Arrivals">New Arrivals</option>
+              <option value="Best Sellers">Best Sellers</option>
+              <option value="Offers">Offers</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stock</label>
+            <input type="number" id="pStock" placeholder="100" min="0"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label>Image</label>
+          <div class="cms-upload-field">
+            <input type="text" id="pImageUrl" placeholder="/assets/images/product-1.jpg" oninput="syncImagePreview('pImageUrl', 'pImagePreviewImg', 'pImagePreviewEmpty')"/>
+            <button class="secondary-btn" type="button" onclick="triggerImageUpload('pImageFile')">Upload</button>
+            <input type="file" id="pImageFile" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" data-target-input="pImageUrl" data-preview-img="pImagePreviewImg" data-preview-empty="pImagePreviewEmpty" data-status="pImageUploadStatus" data-kind="product" onchange="handleImageUpload(event)" hidden/>
+          </div>
+          <div class="cms-upload-status" id="pImageUploadStatus">PNG, JPG, WEBP, or GIF up to 5 MB.</div>
+          <div class="cms-image-preview">
+            <div class="cms-image-preview-empty" id="pImagePreviewEmpty">No product image selected yet.</div>
+            <img id="pImagePreviewImg" alt="Product preview" style="display:none"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label>Short Description</label>
+          <input type="text" id="pShortDesc" placeholder="One-line product summary (shown on cards)"/>
+        </div>
+        <div class="form-group" style="margin-bottom:20px">
+          <label>Description</label>
+          <textarea id="pDesc" placeholder="Full product description..."></textarea>
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <div class="form-group" style="flex-direction:row;align-items:center;gap:12px">
+            <input type="checkbox" id="pIsActive" checked style="width:auto"/>
+            <label for="pIsActive" style="margin:0">Active (visible on site)</label>
+          </div>
+          <div class="form-group" style="flex-direction:row;align-items:center;gap:12px">
+            <input type="checkbox" id="pIsFeatured" style="width:auto"/>
+            <label for="pIsFeatured" style="margin:0">Featured (shown first)</label>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-btn" onclick="closeProductModal()">Cancel</button>
+      <button class="save-btn" onclick="saveProduct(event)">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- -- PROMOTION WIZARD MODAL --------------------------- -->
+<div class="overlay" id="promotionOverlay">
+  <div class="modal promo-modal" id="promotionModal">
+    <div class="modal-header">
+      <h2 id="promotionModalTitle" data-pk="modalAdd">New Promotion</h2>
+      <button class="modal-close" onclick="closePromotionModal()">x</button>
+    </div>
+
+    <div class="promo-steps" id="promoSteps">
+      <div class="promo-step-dot active" data-dot="1"><b>1</b><span data-pk="step1">Type</span></div>
+      <div class="promo-step-dot" data-dot="2"><b>2</b><span data-pk="step2">Products</span></div>
+      <div class="promo-step-dot" data-dot="3"><b>3</b><span data-pk="step3">Details</span></div>
+      <div class="promo-step-dot" data-dot="4"><b>4</b><span data-pk="step4">Duration</span></div>
+      <div class="promo-step-dot" data-dot="5"><b>5</b><span data-pk="step5">Review</span></div>
+    </div>
+
+    <div class="modal-body">
+      <form id="promotionForm" onsubmit="return false">
+        <input type="hidden" id="pmId"/>
+        <input type="hidden" id="pmOfferType"/>
+
+        <!-- STEP 1: offer type -->
+        <div class="promo-step" data-step="1">
+          <div class="promo-type-grid">
+            <button type="button" class="promo-type-card" data-type="bogo" data-buy="1" data-get="1" onclick="selectPromoType(this)">
+              <span class="ptc-badge">1+1</span>
+              <span class="ptc-title" data-pk="type_b1g1">Buy 1, Get 1 Free</span>
+              <span class="ptc-desc" data-pk="type_b1g1_d">Every 2 in the cart, 1 is free.</span>
+            </button>
+            <button type="button" class="promo-type-card" data-type="bogo" data-buy="2" data-get="1" onclick="selectPromoType(this)">
+              <span class="ptc-badge">2+1</span>
+              <span class="ptc-title" data-pk="type_b2g1">Buy 2, Get 1 Free</span>
+              <span class="ptc-desc" data-pk="type_b2g1_d">Every 3 in the cart, 1 is free.</span>
+            </button>
+            <button type="button" class="promo-type-card" data-type="bogo" data-buy="" data-get="" onclick="selectPromoType(this)">
+              <span class="ptc-badge">X+Y</span>
+              <span class="ptc-title" data-pk="type_bxgy">Buy X, Get Y Free</span>
+              <span class="ptc-desc" data-pk="type_bxgy_d">You choose the paid and free counts.</span>
+            </button>
+            <button type="button" class="promo-type-card" data-type="percent" onclick="selectPromoType(this)">
+              <span class="ptc-badge">%</span>
+              <span class="ptc-title" data-pk="type_percent">Percentage Discount</span>
+              <span class="ptc-desc" data-pk="type_percent_d">e.g. 20% off the price.</span>
+            </button>
+            <button type="button" class="promo-type-card" data-type="fixed" onclick="selectPromoType(this)">
+              <span class="ptc-badge">EGP</span>
+              <span class="ptc-title" data-pk="type_fixed">Fixed Amount Off</span>
+              <span class="ptc-desc" data-pk="type_fixed_d">e.g. 100 EGP off each unit.</span>
+            </button>
+            <button type="button" class="promo-type-card" data-type="special_price" onclick="selectPromoType(this)">
+              <span class="ptc-badge">★</span>
+              <span class="ptc-title" data-pk="type_special">Special Price</span>
+              <span class="ptc-desc" data-pk="type_special_d">Set a fixed sale price during the offer.</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 2: products -->
+        <div class="promo-step" data-step="2" hidden>
+          <div class="form-group">
+            <label data-pk="appliesTo">This offer applies to</label>
+            <div class="promo-radio-row">
+              <label class="promo-radio"><input type="radio" name="pmApplies" value="all" checked onchange="onAppliesChange()"/> <span data-pk="allProducts">All products</span></label>
+              <label class="promo-radio"><input type="radio" name="pmApplies" value="products" onchange="onAppliesChange()"/> <span data-pk="specific">Specific products / bundle</span></label>
+            </div>
+          </div>
+          <div class="form-group" id="pmProductPickWrap" style="display:none">
+            <label data-pk="chooseProducts">Choose products</label>
+            <input type="text" class="promo-search" id="pmProductSearch" data-pk-ph="search" placeholder="Search products..." oninput="filterPromoProducts()"/>
+            <div class="promo-product-list" id="pmProductList"></div>
+          </div>
+        </div>
+
+        <!-- STEP 3: details -->
+        <div class="promo-step" data-step="3" hidden>
+          <div class="form-row promo-field" data-for="bogo">
+            <div class="form-group"><label data-pk="buyQty">Paid quantity</label><input type="number" id="pmBuyQty" min="1" step="1" value="1"/></div>
+            <div class="form-group"><label data-pk="getQty">Free quantity</label><input type="number" id="pmGetQty" min="1" step="1" value="1"/></div>
+          </div>
+          <div class="form-group promo-field" data-for="percent"><label data-pk="percent">Discount percentage (%)</label><input type="number" id="pmPercent" min="1" max="100" step="1"/></div>
+          <div class="form-group promo-field" data-for="fixed"><label data-pk="amount">Discount amount (EGP)</label><input type="number" id="pmAmount" min="1" step="1"/></div>
+          <div class="form-group promo-field" data-for="special_price"><label data-pk="special">Special price (EGP)</label><input type="number" id="pmSpecialPrice" min="0" step="1"/></div>
+
+          <div class="form-row">
+            <div class="form-group"><label data-pk="title">Offer title *</label><input type="text" id="pmTitle" maxlength="120" data-pk-ph="titlePh" placeholder="e.g. Summer Sale"/></div>
+            <div class="form-group"><label data-pk="badge">Badge label (optional)</label><input type="text" id="pmBadge" maxlength="40" data-pk-ph="badgePh" placeholder="e.g. Sale, -20%"/></div>
+          </div>
+          <div class="form-group"><label data-pk="desc">Short description (optional)</label><input type="text" id="pmDesc" maxlength="400" data-pk-ph="descPh" placeholder="Shown to customers under the price"/></div>
+          <div class="form-row">
+            <div class="form-group"><label data-pk="priority">Priority (higher wins)</label><input type="number" id="pmPriority" min="0" max="1000" step="1" value="0"/></div>
+            <div class="form-group"><label data-pk="maxUses">Max uses per order (optional)</label><input type="number" id="pmMaxUses" min="1" step="1" data-pk-ph="optional" placeholder="Optional"/></div>
+          </div>
+          <div class="form-group promo-field" data-for="bogo"><label data-pk="maxFree">Max free items per order (optional)</label><input type="number" id="pmMaxFree" min="1" step="1" data-pk-ph="optional" placeholder="Optional"/></div>
+          <div class="promo-check-row">
+            <label class="promo-check"><input type="checkbox" id="pmAllowStacking"/> <span data-pk="stacking">Allow stacking with other offers</span></label>
+            <label class="promo-check"><input type="checkbox" id="pmAvailableAll" checked/> <span data-pk="availableAll">Available to all customers</span></label>
+          </div>
+        </div>
+
+        <!-- STEP 4: duration -->
+        <div class="promo-step" data-step="4" hidden>
+          <div class="form-group">
+            <label data-pk="startMode">When does it start?</label>
+            <div class="promo-radio-row">
+              <label class="promo-radio"><input type="radio" name="pmStartMode" value="now" checked onchange="onStartModeChange()"/> <span data-pk="startNow">Start immediately</span></label>
+              <label class="promo-radio"><input type="radio" name="pmStartMode" value="scheduled" onchange="onStartModeChange()"/> <span data-pk="scheduled">Schedule a start time</span></label>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" id="pmStartWrap" style="display:none"><label data-pk="startsAt">Start date &amp; time</label><input type="datetime-local" id="pmStartsAt"/></div>
+            <div class="form-group"><label data-pk="endsAt">End date &amp; time (optional)</label><input type="datetime-local" id="pmEndsAt"/></div>
+          </div>
+          <div class="promo-hint" data-pk="durationHint">Leave the end empty for an ongoing offer (no countdown timer).</div>
+        </div>
+
+        <!-- STEP 5: review + preview -->
+        <div class="promo-step" data-step="5" hidden>
+          <div class="promo-preview" id="pmPreview"></div>
+          <label class="promo-check promo-activate"><input type="checkbox" id="pmIsActive" checked/> <span data-pk="activate">Activate this promotion now</span></label>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer promo-footer">
+      <button class="cancel-btn" id="pmBackBtn" onclick="promoStep(-1)" data-pk="back">Back</button>
+      <div class="promo-footer-right">
+        <button class="cancel-btn" onclick="closePromotionModal()" data-pk="cancel">Cancel</button>
+        <button class="save-btn" id="pmNextBtn" onclick="promoStep(1)" data-pk="next">Next</button>
+        <button class="save-btn" id="pmSaveBtn" style="display:none" onclick="savePromotion()" data-pk="save">Save &amp; Activate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- -- PROMO CODE MODAL --------------------------- -->
+<div class="overlay" id="promoCodeOverlay">
+  <div class="modal" id="promoCodeModal" style="max-width:560px">
+    <div class="modal-header">
+      <h2 id="promoCodeModalTitle" data-ck="modalAdd">New Promo Code</h2>
+      <button class="modal-close" onclick="closePromoCodeModal()">x</button>
+    </div>
+    <div class="modal-body">
+      <form id="promoCodeForm" onsubmit="return false">
+        <input type="hidden" id="pcId"/>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-ck="code">Code *</label>
+            <input type="text" id="pcCode" maxlength="32" placeholder="SAVE20" style="text-transform:uppercase"/>
+          </div>
+          <div class="form-group">
+            <label data-ck="type">Discount type *</label>
+            <select id="pcType" onchange="onPcTypeChange()">
+              <option value="percent" data-ck="typePercent">Percentage (%)</option>
+              <option value="fixed" data-ck="typeFixed">Fixed amount (EGP)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label id="pcValueLabel" data-ck="valuePercent">Percentage (%)</label>
+            <input type="number" id="pcValue" min="1" step="1" placeholder="20"/>
+          </div>
+          <div class="form-group">
+            <label data-ck="minOrder">Minimum order (optional)</label>
+            <input type="number" id="pcMinOrder" min="0" step="1" placeholder="0"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-ck="maxUses">Total usage limit (optional)</label>
+            <input type="number" id="pcMaxUses" min="1" step="1" data-ck-ph="optional" placeholder="Unlimited"/>
+          </div>
+          <div class="form-group">
+            <label data-ck="startsAt">Starts (optional)</label>
+            <input type="datetime-local" id="pcStartsAt"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label data-ck="endsAt">Ends (optional)</label>
+            <input type="datetime-local" id="pcEndsAt"/>
+          </div>
+          <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;align-self:flex-end;padding-bottom:8px">
+            <input type="checkbox" id="pcIsActive" checked style="width:auto"/>
+            <label for="pcIsActive" style="margin:0" data-ck="active">Active</label>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-btn" onclick="closePromoCodeModal()" data-ck="cancel">Cancel</button>
+      <button class="save-btn" onclick="savePromoCode()" data-ck="save">Save Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- -- CONFIRM DELETE DIALOG --------------------------- -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-dialog">
+    <h3 id="confirmTitle">Delete Order?</h3>
+    <p id="confirmMsg">This action cannot be undone.</p>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="confirm-ok" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- -- TOAST ------------------------------- -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.STAR_CONFIG?.API_URL || '/api';
+const TOKEN_KEY = 'star_admin_token';
+const ADMIN_LANG_KEY = 'star_admin_lang';
+const DEFAULT_SITE_SETTINGS = JSON.parse(JSON.stringify(window.STAR_DEFAULT_STOREFRONT_SETTINGS || {}));
+const DEFAULT_TRANSLATIONS = JSON.parse(JSON.stringify(window.STAR_DEFAULT_TRANSLATIONS || { en: {}, ar: {} }));
+const DEFAULT_CONTENT_BLOCKS = JSON.parse(JSON.stringify(window.STAR_DEFAULT_CONTENT_BLOCKS || {}));
+const ADMIN_COPY = {
+  en: {
+    'meta.title': 'STAR - Admin Dashboard',
+    'login.sub': 'Sign in to manage orders and products.',
+    'login.username': 'Username',
+    'login.password': 'Password',
+    'login.signIn': 'Sign In',
+    'login.signingIn': 'Signing in...',
+    'login.failed': 'Login failed',
+    'common.logout': 'Logout',
+    'common.refresh': 'Refresh',
+    'common.reload': 'Reload',
+    'common.upload': 'Upload',
+    'common.save': 'Save',
+    'common.delete': 'Delete',
+    'common.cancel': 'Cancel',
+    'common.retry': 'Retry',
+    'common.loading': 'Loading...',
+    'common.loadingOrders': 'Loading orders...',
+    'common.loadingProducts': 'Loading products...',
+    'common.loadingContent': 'Loading content...',
+    'common.english': 'English',
+    'common.arabic': 'Arabic',
+    'common.both': 'Both',
+    'common.visible': 'Visible',
+    'common.unsaved': 'Unsaved',
+    'common.total': 'Total',
+    'tabs.orders': 'Orders',
+    'tabs.products': 'Products',
+    'tabs.content': 'Content',
+    'tabs.reviews': 'Reviews',
+    'orders.title': 'Orders Dashboard',
+    'orders.sub': 'Manage all incoming STAR orders in real-time.',
+    'orders.stats.new': 'New',
+    'orders.stats.confirmed': 'Confirmed',
+    'orders.stats.shipping': 'Shipping',
+    'orders.stats.delivered': 'Delivered',
+    'orders.stats.cancelled': 'Cancelled',
+    'orders.stats.revenue': 'Total Revenue',
+    'orders.stats.ordersCount': 'Orders',
+    'orders.search': 'Search by name, phone, city, order ID...',
+    'orders.allStatuses': 'All Statuses',
+    'orders.table.customer': 'Customer',
+    'orders.table.phone': 'Phone',
+    'orders.table.city': 'City',
+    'orders.table.status': 'Status',
+    'orders.table.date': 'Date',
+    'orders.table.actions': 'Actions',
+    'orders.empty': 'No orders found.',
+    'orders.view': 'View',
+    'orders.whatsapp': 'WA',
+    'products.title': 'Product Management',
+    'products.sub': 'Add, edit, and manage your product catalog.',
+    'products.add': '+ Add New Product',
+    'products.table.image': 'Image',
+    'products.table.product': 'Product',
+    'products.table.category': 'Category',
+    'products.table.price': 'Price',
+    'products.table.stock': 'Stock',
+    'products.table.active': 'Active',
+    'products.table.featured': 'Featured',
+    'products.table.actions': 'Actions',
+    'products.empty': 'No products yet. Add one above.',
+    'products.active': 'Active',
+    'products.off': 'Off',
+    'products.edit': 'Edit',
+    'products.delete': 'Delete',
+    'products.modal.add': 'Add Product',
+    'products.modal.edit': 'Edit Product',
+    'products.name': 'Name *',
+    'products.slug': 'Slug *',
+    'products.price': 'Price (EGP) *',
+    'products.oldPrice': 'Old Price (EGP)',
+    'products.category': 'Category *',
+    'products.stock': 'Stock',
+    'products.image': 'Image',
+    'products.shortDescription': 'Short Description',
+    'products.description': 'Description',
+    'products.activeLabel': 'Active (visible on site)',
+    'products.featuredLabel': 'Featured (shown first)',
+    'products.save': 'Save Product',
+    'products.selectCategory': 'Select category',
+    'products.productName': 'Product name',
+    'products.productSlug': 'product-slug',
+    'products.shortPlaceholder': 'One-line product summary (shown on cards)',
+    'products.descriptionPlaceholder': 'Full product description...',
+    'content.title': 'Content & Storefront',
+    'content.sub': 'Control the storefront copy, links, phone numbers, logo, and business info without touching code.',
+    'content.textKeys': 'Text Keys',
+    'content.settingsTitle': 'Storefront Settings',
+    'content.settingsSub': 'Business identity, contact channels, hero numbers, and metadata.',
+    'content.saveSettings': 'Save Settings',
+    'content.brand': 'Brand',
+    'content.siteName': 'Site Name',
+    'content.logoImage': 'Logo Image',
+    'content.metaTitle': 'Meta Title',
+    'content.metaDescription': 'Meta Description',
+    'content.contactSocial': 'Contact & Social',
+    'content.whatsappNumber': 'WhatsApp Number',
+    'content.supportPhone': 'Support Phone',
+    'content.facebookUrl': 'Facebook URL',
+    'content.instagramUrl': 'Instagram URL',
+    'content.tiktokUrl': 'TikTok URL',
+    'content.whatsappMessage': 'WhatsApp Default Message',
+    'content.storefrontNumbers': 'Storefront Numbers',
+    'content.heroOrders': 'Hero Orders Delivered',
+    'content.heroRating': 'Hero Rating',
+    'content.heroCod': 'Hero Cash on Delivery',
+    'content.currencyCode': 'Currency Code',
+    'content.allTextTitle': 'All Storefront Text',
+    'content.allTextSub': 'Edit copy while looking at the live storefront, then fall back to the full text library when needed.',
+    'content.collapse': 'Collapse',
+    'content.expand': 'Expand',
+    'content.saveText': 'Save Text',
+    'content.visualTitle': 'Visual Editor',
+    'content.visualSub': 'Click any highlighted text or editable image in the site preview to edit it.',
+    'content.previewEn': 'Preview EN',
+    'content.previewAr': 'Preview AR',
+    'content.reloadPreview': 'Reload Preview',
+    'content.selectedTitle': 'Selected Item',
+    'content.selectedSub': 'Edit the current text or image selection.',
+    'content.selectedEmpty': 'Click any highlighted text or editable image inside the preview to start editing.',
+    'content.showInLibrary': 'Show In Library',
+    'content.search': 'Search by key or text...',
+    'content.allSections': 'All sections',
+    'content.groupEntries': '{count} text entries',
+    'content.copyHint': 'Use this copy everywhere the key appears in the storefront.',
+    'content.noKeys': 'No content keys found.',
+    'content.errorTitle': 'Could not load storefront content',
+    'content.groups.add': 'Cart Actions',
+    'content.groups.nav': 'Navigation',
+    'content.groups.hero': 'Hero',
+    'content.groups.bundle': 'Bundle',
+    'content.groups.why': 'Why STAR',
+    'content.groups.benefit': 'Benefits',
+    'content.groups.products': 'Products',
+    'content.groups.features': 'Features',
+    'content.groups.feat': 'Feature Cards',
+    'content.groups.gallery': 'Gallery',
+    'content.groups.reviews': 'Reviews',
+    'content.groups.review': 'Review Cards',
+    'content.groups.order': 'Checkout',
+    'content.groups.cart': 'Cart',
+    'content.groups.label': 'Form Labels',
+    'content.groups.placeholder': 'Form Placeholders',
+    'content.groups.trust': 'Trust Badges',
+    'content.groups.checkout': 'Checkout Pills',
+    'content.groups.success': 'Success State',
+    'content.groups.faq': 'FAQ',
+    'content.groups.warranty': 'Warranty',
+    'content.groups.cable': 'Cable Copy',
+    'content.groups.footer': 'Footer',
+    'content.groups.sticky': 'Sticky CTA',
+    'content.groups.wa': 'WhatsApp',
+    'content.groups.upsell': 'Upsell',
+    'content.groups.toast': 'Toast Messages',
+    'content.groups.cat': 'Categories',
+    'content.groups.scroll': 'Scroll',
+    'modal.orderDetails': 'Order Details',
+    'modal.customerInfo': 'Customer Information',
+    'modal.name': 'Name',
+    'modal.phone': 'Phone',
+    'modal.city': 'City',
+    'modal.address': 'Address',
+    'modal.notes': 'Notes',
+    'modal.date': 'Date',
+    'modal.orderItems': 'Order Items',
+    'modal.product': 'Product',
+    'modal.options': 'Options',
+    'modal.qty': 'Qty',
+    'modal.unitPrice': 'Unit Price',
+    'modal.total': 'Total',
+    'modal.priceSummary': 'Price Summary',
+    'modal.subtotal': 'Subtotal',
+    'modal.shipping': 'Shipping',
+    'modal.discount': 'Discount',
+    'modal.adminNotes': 'Admin Notes',
+    'modal.adminNotesPlaceholder': 'Add private notes about this order...',
+    'confirm.deleteOrderTitle': 'Delete Order?',
+    'confirm.deleteOrderMessage': 'Order #{id} will be permanently deleted. This cannot be undone.',
+    'confirm.deleteProductTitle': 'Delete Product?',
+    'confirm.deleteProductMessage': '"{name}" will be permanently deleted.',
+    'messages.status.new': 'New',
+    'messages.status.confirmed': 'Confirmed',
+    'messages.status.shipping': 'Shipping',
+    'messages.status.delivered': 'Delivered',
+    'messages.status.cancelled': 'Cancelled',
+    'messages.statusUpdated': 'Status updated to "{status}"',
+    'messages.failedUpdateStatus': 'Failed to update status',
+    'messages.failedLoadOrderDetails': 'Failed to load order details',
+    'messages.noCustomerPhone': 'No phone number saved for this order.',
+    'messages.waOrderGreeting': 'Hi {name}, regarding your STAR order #{id}',
+    'messages.orderSaved': 'Order saved',
+    'messages.failedSave': 'Failed to save',
+    'messages.productUpdated': 'Product updated',
+    'messages.failedUpdateProduct': 'Failed to update product',
+    'messages.productCreatedDone': 'Product created!',
+    'messages.productUpdatedDone': 'Product updated!',
+    'messages.failedSaveProduct': 'Failed to save product',
+    'messages.imageHint': 'PNG, JPG, WEBP, or GIF up to 5 MB.',
+    'messages.noLogoSelected': 'No logo selected yet.',
+    'messages.noProductImageSelected': 'No product image selected yet.',
+    'messages.imageLoadFailed': 'Could not load this image.',
+    'messages.uploading': 'Uploading {file}...',
+    'messages.uploadReady': 'Upload complete. Ready to save.',
+    'messages.imageUploaded': 'Image uploaded successfully',
+    'messages.uploadFailed': 'Upload failed',
+    'messages.siteConfigUpdated': 'Storefront settings updated',
+    'messages.failedSaveSettings': 'Failed to save settings',
+    'messages.siteTextUpdated': 'Storefront text updated',
+    'messages.failedSaveContent': 'Failed to save content',
+    'messages.orderDeleted': 'Order deleted',
+    'messages.failedDeleteOrder': 'Failed to delete order',
+    'messages.productDeleted': 'Product deleted',
+    'messages.failedDeleteProduct': 'Failed to delete product',
+    'messages.noItems': 'No items',
+    'messages.showing': 'Showing {from}-{to} of {total}',
+    'messages.prev': 'Prev',
+    'messages.next': 'Next',
+    'messages.backendTitle': 'Could not connect to backend',
+    'messages.backendHint': 'Make sure the server is running at {api}',
+    'messages.failedLoadSiteConfig': 'Failed to load site configuration',
+    'messages.unknownError': 'Unknown error',
+    'placeholders.logo': 'logo.png',
+    'placeholders.metaTitle': 'Browser title and SEO title',
+    'placeholders.metaDescription': 'SEO description shown in search results',
+    'placeholders.phone': '201XXXXXXXXX',
+    'placeholders.facebook': 'https://facebook.com/...',
+    'placeholders.instagram': 'https://instagram.com/...',
+    'placeholders.tiktok': 'https://tiktok.com/...',
+    'placeholders.whatsappMessage': 'Hello STAR, I want to place an order.',
+    'placeholders.image': '/assets/images/product-1.jpg',
+    'placeholders.selectedEnglish': 'English text...',
+    'placeholders.selectedArabic': 'Arabic text...'
+  },
+  ar: {
+    'meta.title': 'STAR - لوحة التحكم',
+    'login.sub': 'سجّل الدخول لإدارة الطلبات والمنتجات.',
+    'login.username': 'اسم المستخدم',
+    'login.password': 'كلمة المرور',
+    'login.signIn': 'تسجيل الدخول',
+    'login.signingIn': 'جارٍ تسجيل الدخول...',
+    'login.failed': 'فشل تسجيل الدخول',
+    'common.logout': 'تسجيل الخروج',
+    'common.refresh': 'تحديث',
+    'common.reload': 'إعادة تحميل',
+    'common.upload': 'رفع',
+    'common.save': 'حفظ',
+    'common.delete': 'حذف',
+    'common.cancel': 'إلغاء',
+    'common.retry': 'إعادة المحاولة',
+    'common.loading': 'جارٍ التحميل...',
+    'common.loadingOrders': 'جارٍ تحميل الطلبات...',
+    'common.loadingProducts': 'جارٍ تحميل المنتجات...',
+    'common.loadingContent': 'جارٍ تحميل المحتوى...',
+    'common.english': 'الإنجليزية',
+    'common.arabic': 'العربية',
+    'common.both': 'اللغتان',
+    'common.visible': 'الظاهر',
+    'common.unsaved': 'غير محفوظ',
+    'common.total': 'الإجمالي',
+    'tabs.orders': 'الطلبات',
+    'tabs.products': 'المنتجات',
+    'tabs.content': 'المحتوى',
+    'tabs.reviews': 'التقييمات',
+    'orders.title': 'لوحة الطلبات',
+    'orders.sub': 'إدارة كل طلبات STAR الواردة بشكل لحظي.',
+    'orders.stats.new': 'جديد',
+    'orders.stats.confirmed': 'مؤكد',
+    'orders.stats.shipping': 'قيد الشحن',
+    'orders.stats.delivered': 'تم التوصيل',
+    'orders.stats.cancelled': 'ملغي',
+    'orders.stats.revenue': 'إجمالي الإيرادات',
+    'orders.stats.ordersCount': 'الطلبات',
+    'orders.search': 'ابحث بالاسم أو الهاتف أو المدينة أو رقم الطلب...',
+    'orders.allStatuses': 'كل الحالات',
+    'orders.table.customer': 'العميل',
+    'orders.table.phone': 'الهاتف',
+    'orders.table.city': 'المدينة',
+    'orders.table.status': 'الحالة',
+    'orders.table.date': 'التاريخ',
+    'orders.table.actions': 'الإجراءات',
+    'orders.empty': 'لا توجد طلبات.',
+    'orders.view': 'عرض',
+    'orders.whatsapp': 'واتساب',
+    'products.title': 'إدارة المنتجات',
+    'products.sub': 'أضف وعدّل ونظّم كتالوج المنتجات بسهولة.',
+    'products.add': '+ إضافة منتج جديد',
+    'products.table.image': 'الصورة',
+    'products.table.product': 'المنتج',
+    'products.table.category': 'الفئة',
+    'products.table.price': 'السعر',
+    'products.table.stock': 'المخزون',
+    'products.table.active': 'نشط',
+    'products.table.featured': 'مميز',
+    'products.table.actions': 'الإجراءات',
+    'products.empty': 'لا توجد منتجات بعد. أضف أول منتج من فوق.',
+    'products.active': 'نشط',
+    'products.off': 'مغلق',
+    'products.edit': 'تعديل',
+    'products.delete': 'حذف',
+    'products.modal.add': 'إضافة منتج',
+    'products.modal.edit': 'تعديل المنتج',
+    'products.name': 'الاسم *',
+    'products.slug': 'الرابط المختصر *',
+    'products.price': 'السعر (EGP) *',
+    'products.oldPrice': 'السعر قبل الخصم (EGP)',
+    'products.category': 'الفئة *',
+    'products.stock': 'المخزون',
+    'products.image': 'الصورة',
+    'products.shortDescription': 'وصف مختصر',
+    'products.description': 'الوصف',
+    'products.activeLabel': 'نشط (ظاهر على الموقع)',
+    'products.featuredLabel': 'مميز (يظهر أولاً)',
+    'products.save': 'حفظ المنتج',
+    'products.selectCategory': 'اختر الفئة',
+    'products.productName': 'اسم المنتج',
+    'products.productSlug': 'product-slug',
+    'products.shortPlaceholder': 'نبذة قصيرة تظهر على كارت المنتج',
+    'products.descriptionPlaceholder': 'الوصف الكامل للمنتج...',
+    'content.title': 'المحتوى والواجهة',
+    'content.sub': 'تحكم في نصوص الموقع والروابط وأرقام التواصل واللوجو وبيانات النشاط من غير أي كود.',
+    'content.textKeys': 'مفاتيح النصوص',
+    'content.settingsTitle': 'إعدادات الواجهة',
+    'content.settingsSub': 'هوية البراند ووسائل التواصل وأرقام الهيرو والبيانات العامة.',
+    'content.saveSettings': 'حفظ الإعدادات',
+    'content.brand': 'البراند',
+    'content.siteName': 'اسم الموقع',
+    'content.logoImage': 'صورة اللوجو',
+    'content.metaTitle': 'عنوان الصفحة',
+    'content.metaDescription': 'وصف الصفحة',
+    'content.contactSocial': 'التواصل والسوشيال',
+    'content.whatsappNumber': 'رقم واتساب',
+    'content.supportPhone': 'رقم الدعم',
+    'content.facebookUrl': 'رابط فيسبوك',
+    'content.instagramUrl': 'رابط إنستجرام',
+    'content.tiktokUrl': 'رابط تيك توك',
+    'content.whatsappMessage': 'رسالة واتساب الافتراضية',
+    'content.storefrontNumbers': 'أرقام الواجهة',
+    'content.heroOrders': 'عدد الطلبات في الهيرو',
+    'content.heroRating': 'التقييم في الهيرو',
+    'content.heroCod': 'الدفع عند الاستلام في الهيرو',
+    'content.currencyCode': 'كود العملة',
+    'content.allTextTitle': 'كل نصوص الموقع',
+    'content.allTextSub': 'عدّل النصوص وأنت شايف الموقع، ولو احتجت ارجع لمكتبة النصوص الكاملة.',
+    'content.collapse': 'طي الكل',
+    'content.expand': 'فتح الكل',
+    'content.saveText': 'حفظ النصوص',
+    'content.visualTitle': 'المحرر البصري',
+    'content.visualSub': 'اضغط على أي نص متظلل أو صورة قابلة للتعديل داخل معاينة الموقع.',
+    'content.previewEn': 'معاينة EN',
+    'content.previewAr': 'معاينة AR',
+    'content.reloadPreview': 'إعادة تحميل المعاينة',
+    'content.selectedTitle': 'العنصر المحدد',
+    'content.selectedSub': 'عدّل النص أو الصورة المحددة.',
+    'content.selectedEmpty': 'اضغط على أي نص متظلل أو صورة قابلة للتعديل داخل المعاينة للبدء.',
+    'content.showInLibrary': 'إظهار في المكتبة',
+    'content.search': 'ابحث بالمفتاح أو النص...',
+    'content.allSections': 'كل الأقسام',
+    'content.groupEntries': '{count} عنصر نصي',
+    'content.copyHint': 'استخدم هذا النص في كل الأماكن التي يظهر فيها نفس المفتاح داخل الموقع.',
+    'content.noKeys': 'لا توجد مفاتيح محتوى.',
+    'content.errorTitle': 'تعذر تحميل محتوى الموقع',
+    'content.groups.add': 'أزرار السلة',
+    'content.groups.nav': 'التنقل',
+    'content.groups.hero': 'الهيرو',
+    'content.groups.bundle': 'الباندل',
+    'content.groups.why': 'لماذا STAR',
+    'content.groups.benefit': 'المميزات',
+    'content.groups.products': 'المنتجات',
+    'content.groups.features': 'الخصائص',
+    'content.groups.feat': 'كروت الخصائص',
+    'content.groups.gallery': 'المعرض',
+    'content.groups.reviews': 'المراجعات',
+    'content.groups.review': 'كروت المراجعات',
+    'content.groups.order': 'إتمام الطلب',
+    'content.groups.cart': 'السلة',
+    'content.groups.label': 'عناوين الحقول',
+    'content.groups.placeholder': 'النصوص الإرشادية',
+    'content.groups.trust': 'شارات الثقة',
+    'content.groups.checkout': 'شارات الدفع',
+    'content.groups.success': 'حالة النجاح',
+    'content.groups.faq': 'الأسئلة الشائعة',
+    'content.groups.warranty': 'الضمان',
+    'content.groups.cable': 'نصوص الوصلة',
+    'content.groups.footer': 'الفوتر',
+    'content.groups.sticky': 'الزر الثابت',
+    'content.groups.wa': 'واتساب',
+    'content.groups.upsell': 'البيع الإضافي',
+    'content.groups.toast': 'رسائل التنبيه',
+    'content.groups.cat': 'الفئات',
+    'content.groups.scroll': 'التمرير',
+    'modal.orderDetails': 'تفاصيل الطلب',
+    'modal.customerInfo': 'بيانات العميل',
+    'modal.name': 'الاسم',
+    'modal.phone': 'الهاتف',
+    'modal.city': 'المدينة',
+    'modal.address': 'العنوان',
+    'modal.notes': 'ملاحظات',
+    'modal.date': 'التاريخ',
+    'modal.orderItems': 'عناصر الطلب',
+    'modal.product': 'المنتج',
+    'modal.options': 'الخيارات',
+    'modal.qty': 'الكمية',
+    'modal.unitPrice': 'سعر الوحدة',
+    'modal.total': 'الإجمالي',
+    'modal.priceSummary': 'ملخص السعر',
+    'modal.subtotal': 'الإجمالي الفرعي',
+    'modal.shipping': 'الشحن',
+    'modal.discount': 'الخصم',
+    'modal.adminNotes': 'ملاحظات الإدارة',
+    'modal.adminNotesPlaceholder': 'أضف ملاحظات داخلية على هذا الطلب...',
+    'confirm.deleteOrderTitle': 'حذف الطلب؟',
+    'confirm.deleteOrderMessage': 'سيتم حذف الطلب رقم #{id} نهائيًا. لا يمكن التراجع عن هذا الإجراء.',
+    'confirm.deleteProductTitle': 'حذف المنتج؟',
+    'confirm.deleteProductMessage': 'سيتم حذف "{name}" نهائيًا.',
+    'messages.status.new': 'جديد',
+    'messages.status.confirmed': 'مؤكد',
+    'messages.status.shipping': 'قيد الشحن',
+    'messages.status.delivered': 'تم التوصيل',
+    'messages.status.cancelled': 'ملغي',
+    'messages.statusUpdated': 'تم تحديث الحالة إلى "{status}"',
+    'messages.failedUpdateStatus': 'فشل تحديث الحالة',
+    'messages.failedLoadOrderDetails': 'فشل تحميل تفاصيل الطلب',
+    'messages.noCustomerPhone': 'لا يوجد رقم هاتف محفوظ لهذا الطلب.',
+    'messages.waOrderGreeting': 'مرحبًا {name}، بخصوص طلبك رقم #{id} لدى STAR',
+    'messages.orderSaved': 'تم حفظ الطلب',
+    'messages.failedSave': 'فشل الحفظ',
+    'messages.productUpdated': 'تم تحديث المنتج',
+    'messages.failedUpdateProduct': 'فشل تحديث المنتج',
+    'messages.productCreatedDone': 'تم إنشاء المنتج!',
+    'messages.productUpdatedDone': 'تم تحديث المنتج!',
+    'messages.failedSaveProduct': 'فشل حفظ المنتج',
+    'messages.imageHint': 'PNG أو JPG أو WEBP أو GIF حتى 5 ميجا.',
+    'messages.noLogoSelected': 'لم يتم اختيار لوجو بعد.',
+    'messages.noProductImageSelected': 'لم يتم اختيار صورة للمنتج بعد.',
+    'messages.imageLoadFailed': 'تعذر تحميل هذه الصورة.',
+    'messages.uploading': 'جارٍ رفع {file}...',
+    'messages.uploadReady': 'تم الرفع. جاهز للحفظ.',
+    'messages.imageUploaded': 'تم رفع الصورة بنجاح',
+    'messages.uploadFailed': 'فشل رفع الصورة',
+    'messages.siteConfigUpdated': 'تم تحديث إعدادات الواجهة',
+    'messages.failedSaveSettings': 'فشل حفظ الإعدادات',
+    'messages.siteTextUpdated': 'تم تحديث نصوص الموقع',
+    'messages.failedSaveContent': 'فشل حفظ المحتوى',
+    'messages.orderDeleted': 'تم حذف الطلب',
+    'messages.failedDeleteOrder': 'فشل حذف الطلب',
+    'messages.productDeleted': 'تم حذف المنتج',
+    'messages.failedDeleteProduct': 'فشل حذف المنتج',
+    'messages.noItems': 'لا توجد عناصر',
+    'messages.showing': 'عرض {from}-{to} من {total}',
+    'messages.prev': 'السابق',
+    'messages.next': 'التالي',
+    'messages.backendTitle': 'تعذر الاتصال بالباك إند',
+    'messages.backendHint': 'تأكد أن السيرفر يعمل على {api}',
+    'messages.failedLoadSiteConfig': 'فشل تحميل إعدادات الموقع',
+    'messages.unknownError': 'خطأ غير معروف',
+    'placeholders.logo': 'logo.png',
+    'placeholders.metaTitle': 'عنوان المتصفح ونتائج البحث',
+    'placeholders.metaDescription': 'وصف يظهر في نتائج البحث',
+    'placeholders.phone': '201XXXXXXXXX',
+    'placeholders.facebook': 'https://facebook.com/...',
+    'placeholders.instagram': 'https://instagram.com/...',
+    'placeholders.tiktok': 'https://tiktok.com/...',
+    'placeholders.whatsappMessage': 'أهلًا STAR، أريد تنفيذ طلب.',
+    'placeholders.image': '/assets/images/product-1.jpg',
+    'placeholders.selectedEnglish': 'النص الإنجليزي...',
+    'placeholders.selectedArabic': 'النص العربي...'
+  }
+};
+
+let currentPage = 1;
+const PER_PAGE = 15;
+let currentOrderId = null;
+let currentOrders = [];
+let currentOrdersPagination = null;
+let searchTimeout = null;
+let adminToken = localStorage.getItem(TOKEN_KEY) || '';
+let adminLang = localStorage.getItem(ADMIN_LANG_KEY) || 'en';
+let contentViewMode = 'split';
+let previewLang = 'en';
+let selectedContentKey = '';
+let selectedMediaKey = '';
+let baselineTranslations = { en: {}, ar: {} };
+let siteConfig = {
+  storefront: { ...DEFAULT_SITE_SETTINGS },
+  translations: JSON.parse(JSON.stringify(DEFAULT_TRANSLATIONS)),
+  contentBlocks: JSON.parse(JSON.stringify(DEFAULT_CONTENT_BLOCKS)),
+};
+
+document.getElementById('loginForm').addEventListener('submit', login);
+
+function t(key, vars = {}) {
+  const source = ADMIN_COPY[adminLang]?.[key] ?? ADMIN_COPY.en[key] ?? key;
+  return String(source).replace(/\{(\w+)\}/g, (_, token) => String(vars[token] ?? ''));
+}
+
+function currentDateLocale() {
+  return adminLang === 'ar' ? 'ar-EG' : 'en-GB';
+}
+
+function currentNumberLocale() {
+  return adminLang === 'ar' ? 'ar-EG' : 'en-US';
+}
+
+function updateLanguageToggleState() {
+  document.querySelectorAll('.admin-lang-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.lang === adminLang);
+  });
+}
+
+function updateStatusOptionLabels() {
+  ['statusFilter', 'mStatusSelect'].forEach((id) => {
+    const select = document.getElementById(id);
+    if (!select) return;
+    Array.from(select.options).forEach((option) => {
+      if (!option.value) {
+        option.textContent = t('orders.allStatuses');
+        return;
+      }
+      option.textContent = statusLabel(option.value);
+    });
+  });
+}
+
+function updateCategoryOptionLabels() {
+  const select = document.getElementById('pCategory');
+  if (!select) return;
+  const categoryLabels = {
+    '': t('products.selectCategory'),
+    'Featured': adminLang === 'ar' ? 'مميّز' : 'Featured',
+    'New Arrivals': adminLang === 'ar' ? 'وصل حديثاً' : 'New Arrivals',
+    'Best Sellers': adminLang === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers',
+    'Offers': adminLang === 'ar' ? 'عروض' : 'Offers',
+    'Other': adminLang === 'ar' ? 'أخرى' : 'Other',
+  };
+  Array.from(select.options).forEach((option) => {
+    option.textContent = categoryLabels[option.value] || option.value;
+  });
+}
+
+function applyStaticAdminLanguage() {
+  document.title = t('meta.title');
+  document.documentElement.lang = adminLang === 'ar' ? 'ar' : 'en';
+  document.documentElement.dir = adminLang === 'ar' ? 'rtl' : 'ltr';
+  document.body.classList.toggle('lang-ar', adminLang === 'ar');
+  document.body.classList.toggle('lang-en', adminLang !== 'ar');
+  updateLanguageToggleState();
+
+  const textMap = {
+    '#loginWrap .login-sub': 'login.sub',
+    'label[for="loginUsername"]': 'login.username',
+    'label[for="loginPassword"]': 'login.password',
+    '#tabOrders': 'tabs.orders',
+    '#tabProducts': 'tabs.products',
+    '#tabContent': 'tabs.content',
+    '#tabReviews': 'tabs.reviews',
+    '#contentOrders .page-title': 'orders.title',
+    '#contentOrders .page-sub': 'orders.sub',
+    '#sTotal': null,
+    '#contentOrders .stat-card:nth-child(1) .stat-label': 'common.total',
+    '#contentOrders .stat-card:nth-child(2) .stat-label': 'orders.stats.new',
+    '#contentOrders .stat-card:nth-child(3) .stat-label': 'orders.stats.confirmed',
+    '#contentOrders .stat-card:nth-child(4) .stat-label': 'orders.stats.shipping',
+    '#contentOrders .stat-card:nth-child(5) .stat-label': 'orders.stats.delivered',
+    '#contentOrders .stat-card:nth-child(6) .stat-label': 'orders.stats.cancelled',
+    '.revenue-highlight .rev-label': 'orders.stats.revenue',
+    '.revenue-highlight .rev-orders-label': 'orders.stats.ordersCount',
+    '#contentOrders .refresh-btn': 'common.refresh',
+    '#contentOrders th:nth-child(2)': 'orders.table.customer',
+    '#contentOrders th:nth-child(3)': 'orders.table.phone',
+    '#contentOrders th:nth-child(4)': 'orders.table.city',
+    '#contentOrders th:nth-child(5)': 'common.total',
+    '#contentOrders th:nth-child(6)': 'orders.table.status',
+    '#contentOrders th:nth-child(7)': 'orders.table.date',
+    '#contentOrders th:nth-child(8)': 'orders.table.actions',
+    '#contentProducts .page-title': 'products.title',
+    '#contentProducts .page-sub': 'products.sub',
+    '#contentProducts .add-product-btn': 'products.add',
+    '#contentProducts .refresh-btn': 'common.refresh',
+    '#contentProducts th:nth-child(1)': 'products.table.image',
+    '#contentProducts th:nth-child(2)': 'products.table.product',
+    '#contentProducts th:nth-child(3)': 'products.table.category',
+    '#contentProducts th:nth-child(4)': 'products.table.price',
+    '#contentProducts th:nth-child(5)': 'products.table.stock',
+    '#contentProducts th:nth-child(6)': 'products.table.active',
+    '#contentProducts th:nth-child(7)': 'products.table.featured',
+    '#contentProducts th:nth-child(8)': 'products.table.actions',
+    '#contentContent .page-title': 'content.title',
+    '#contentContent .page-sub': 'content.sub',
+    '#contentContent .cms-overview-card:nth-child(1) .cms-overview-label': 'content.textKeys',
+    '#contentContent .cms-overview-card:nth-child(2) .cms-overview-label': 'common.visible',
+    '#contentContent .cms-overview-card:nth-child(3) .cms-overview-label': 'common.unsaved',
+    '#contentContent .cms-grid .cms-panel:first-child .cms-panel-head h3': 'content.settingsTitle',
+    '#contentContent .cms-grid .cms-panel:first-child .cms-panel-head p': 'content.settingsSub',
+    '#contentContent .cms-grid .cms-panel:first-child .cms-panel-head .save-btn': 'content.saveSettings',
+    '#storefrontForm .cms-form-section:nth-child(1) .cms-form-section-title': 'content.brand',
+    'label[for="sfSiteName"]': 'content.siteName',
+    'label[for="sfLogoUrl"]': 'content.logoImage',
+    'label[for="sfMetaTitle"]': 'content.metaTitle',
+    'label[for="sfMetaDescription"]': 'content.metaDescription',
+    '#storefrontForm .cms-form-section:nth-child(2) .cms-form-section-title': 'content.contactSocial',
+    'label[for="sfWhatsappNumber"]': 'content.whatsappNumber',
+    'label[for="sfSupportPhone"]': 'content.supportPhone',
+    'label[for="sfFacebookUrl"]': 'content.facebookUrl',
+    'label[for="sfInstagramUrl"]': 'content.instagramUrl',
+    'label[for="sfTiktokUrl"]': 'content.tiktokUrl',
+    'label[for="sfWhatsappMessage"]': 'content.whatsappMessage',
+    '#storefrontForm .cms-form-section:nth-child(3) .cms-form-section-title': 'content.storefrontNumbers',
+    'label[for="sfHeroOrders"]': 'content.heroOrders',
+    'label[for="sfHeroRating"]': 'content.heroRating',
+    'label[for="sfHeroCod"]': 'content.heroCod',
+    'label[for="sfCurrencyCode"]': 'content.currencyCode',
+    '#contentContent .cms-grid .cms-panel:nth-child(2) .cms-panel-head h3': 'content.allTextTitle',
+    '#contentContent .cms-grid .cms-panel:nth-child(2) .cms-panel-head p': 'content.allTextSub',
+    '#contentContent .cms-grid .cms-panel:nth-child(2) .cms-head-actions .secondary-btn:nth-child(1)': 'content.collapse',
+    '#contentContent .cms-grid .cms-panel:nth-child(2) .cms-head-actions .secondary-btn:nth-child(2)': 'content.expand',
+    '#contentContent .cms-grid .cms-panel:nth-child(2) .cms-head-actions .save-btn': 'content.saveText',
+    '.cms-preview-card-head h4': 'content.visualTitle',
+    '.cms-preview-card-head p': 'content.visualSub',
+    '[data-preview-lang="en"]': 'content.previewEn',
+    '[data-preview-lang="ar"]': 'content.previewAr',
+    '.cms-preview-card-head .secondary-btn': 'content.reloadPreview',
+    '.cms-selection-head h4': 'content.selectedTitle',
+    '.cms-selection-head p': 'content.selectedSub',
+    '#contentSelectionEmpty': 'content.selectedEmpty',
+    '.cms-selection-actions .secondary-btn': 'content.showInLibrary',
+    '#contentViewSwitch [data-mode="split"]': 'common.both',
+    '#contentViewSwitch [data-mode="en"]': 'common.english',
+    '#contentViewSwitch [data-mode="ar"]': 'common.arabic',
+    '#contentContent .cms-toolbar .refresh-btn': 'common.reload',
+    '#modalOrderTitle': 'modal.orderDetails',
+    '#orderModal .modal-section:nth-child(1) .modal-section-title': 'modal.customerInfo',
+    '#orderModal .info-item:nth-child(1) .info-label': 'modal.name',
+    '#orderModal .info-item:nth-child(2) .info-label': 'modal.phone',
+    '#orderModal .info-item:nth-child(3) .info-label': 'modal.city',
+    '#orderModal .info-item:nth-child(4) .info-label': 'modal.address',
+    '#orderModal .info-item:nth-child(5) .info-label': 'modal.notes',
+    '#orderModal .info-item:nth-child(6) .info-label': 'modal.date',
+    '#orderModal .modal-section:nth-child(2) .modal-section-title': 'modal.orderItems',
+    '#orderModal .items-table th:nth-child(1)': 'modal.product',
+    '#orderModal .items-table th:nth-child(2)': 'modal.options',
+    '#orderModal .items-table th:nth-child(3)': 'modal.qty',
+    '#orderModal .items-table th:nth-child(4)': 'modal.unitPrice',
+    '#orderModal .items-table th:nth-child(5)': 'modal.total',
+    '#orderModal .modal-section:nth-child(3) .modal-section-title': 'modal.priceSummary',
+    '#orderModal .price-row:nth-child(1) span:first-child': 'modal.subtotal',
+    '#orderModal .price-row:nth-child(2) span:first-child': 'modal.shipping',
+    '#orderModal .price-row:nth-child(3) span:first-child': 'modal.discount',
+    '#orderModal .price-row.total span:first-child': 'modal.total',
+    '#orderModal .modal-section:nth-child(4) .modal-section-title': 'modal.adminNotes',
+    '#mWaBtn': 'orders.whatsapp',
+    '#productForm .form-row:nth-child(2) .form-group:nth-child(1) label': 'products.name',
+    '#productForm .form-row:nth-child(2) .form-group:nth-child(2) label': 'products.slug',
+    '#productForm .form-row:nth-child(3) .form-group:nth-child(1) label': 'products.price',
+    '#productForm .form-row:nth-child(3) .form-group:nth-child(2) label': 'products.oldPrice',
+    '#productForm .form-row:nth-child(4) .form-group:nth-child(1) label': 'products.category',
+    '#productForm .form-row:nth-child(4) .form-group:nth-child(2) label': 'products.stock',
+    '#productForm > .form-group:nth-of-type(1) label': 'products.image',
+    '#storefrontForm .cms-upload-field .secondary-btn': 'common.upload',
+    '#productForm .cms-upload-field .secondary-btn': 'common.upload',
+    '#productForm > .form-group:nth-of-type(2) label': 'products.shortDescription',
+    '#productForm > .form-group:nth-of-type(3) label': 'products.description',
+    'label[for="pIsActive"]': 'products.activeLabel',
+    'label[for="pIsFeatured"]': 'products.featuredLabel',
+    '#productModal .modal-footer .cancel-btn': 'common.cancel',
+    '#productModal .modal-footer .save-btn': 'products.save',
+    'label[for="selectedContentEn"]': 'common.english',
+    'label[for="selectedContentAr"]': 'common.arabic',
+    '#orderModal .modal-footer button.action-btn:nth-of-type(1)': 'common.save',
+    '#orderModal .modal-footer button.action-btn:nth-of-type(2)': 'common.delete',
+    '#confirmOverlay .confirm-cancel': 'common.cancel',
+    '#confirmOverlay .confirm-ok': 'common.delete'
+  };
+
+  Object.entries(textMap).forEach(([selector, key]) => {
+    if (!key) return;
+    const node = document.querySelector(selector);
+    if (node) node.textContent = t(key);
+  });
+
+  const placeholderMap = {
+    '#searchInput': 'orders.search',
+    '#sfLogoUrl': 'placeholders.logo',
+    '#sfMetaTitle': 'placeholders.metaTitle',
+    '#sfMetaDescription': 'placeholders.metaDescription',
+    '#sfWhatsappNumber': 'placeholders.phone',
+    '#sfSupportPhone': 'placeholders.phone',
+    '#sfFacebookUrl': 'placeholders.facebook',
+    '#sfInstagramUrl': 'placeholders.instagram',
+    '#sfTiktokUrl': 'placeholders.tiktok',
+    '#sfWhatsappMessage': 'placeholders.whatsappMessage',
+    '#contentSearchInput': 'content.search',
+    '#selectedContentEn': 'placeholders.selectedEnglish',
+    '#selectedContentAr': 'placeholders.selectedArabic',
+    '#mAdminNotes': 'modal.adminNotesPlaceholder',
+    '#pName': 'products.productName',
+    '#pSlug': 'products.productSlug',
+    '#pImageUrl': 'placeholders.image',
+    '#pShortDesc': 'products.shortPlaceholder',
+    '#pDesc': 'products.descriptionPlaceholder'
+  };
+
+  Object.entries(placeholderMap).forEach(([selector, key]) => {
+    const node = document.querySelector(selector);
+    if (node) node.placeholder = t(key);
+  });
+
+  updateStatusOptionLabels();
+  updateCategoryOptionLabels();
+  if (typeof applyPromoI18n === 'function') applyPromoI18n();
+  if (typeof applyCodesI18n === 'function') applyCodesI18n();
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) {
+    loginBtn.textContent = loginBtn.disabled ? t('login.signingIn') : t('login.signIn');
+  }
+  resetUploadStatus('sfLogoUploadStatus');
+  resetUploadStatus('pImageUploadStatus');
+}
+
+function setAdminLanguage(lang) {
+  if (!['en', 'ar'].includes(lang)) return;
+  adminLang = lang;
+  localStorage.setItem(ADMIN_LANG_KEY, lang);
+  applyStaticAdminLanguage();
+
+  if (currentOrders.length) {
+    renderOrdersTable(currentOrders);
+    renderPagination(currentOrdersPagination, 'ordersPagination', loadOrders);
+  }
+  if (allProducts.length) {
+    renderProductsTable(allProducts);
+  }
+  if (siteConfig?.translations) {
+    renderContentEditor();
+    bindContentEditorInteractions();
+    setContentViewMode(contentViewMode);
+    filterContentRows();
+    if (selectedContentKey) selectContentKey(selectedContentKey);
+  }
+  if (currentOrderId && document.getElementById('orderOverlay').classList.contains('open')) {
+    openOrderModal(currentOrderId);
+  }
+}
+
+async function login(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  err.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = t('login.signingIn');
+
+  try {
+    const res = await fetch(`${API}/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('loginUsername').value.trim(),
+        password: document.getElementById('loginPassword').value,
+      }),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || t('login.failed'));
+
+    adminToken = result.token;
+    localStorage.setItem(TOKEN_KEY, adminToken);
+    showShell(result.username || document.getElementById('loginUsername').value.trim() || 'admin');
+    await bootDashboard();
+  } catch (error) {
+    err.textContent = error.message || t('login.failed');
+    err.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = t('login.signIn');
+  }
+}
+
+function logout() {
+  adminToken = '';
+  localStorage.removeItem(TOKEN_KEY);
+  document.getElementById('shell').classList.remove('active');
+  document.getElementById('loginWrap').style.display = 'flex';
+}
+
+function showShell(username = 'admin') {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('shell').classList.add('active');
+  document.getElementById('topbarUser').textContent = username.toUpperCase();
+}
+
+async function requireAuth() {
+  if (!adminToken) return false;
+  try {
+    const res = await fetch(`${API}/admin/me`, authHeaders());
+    if (!res.ok) throw new Error();
+    const result = await res.json();
+    showShell(result.data?.username || 'admin');
+    return true;
+  } catch {
+    logout();
+    return false;
+  }
+}
+
+async function bootDashboard() {
+  await Promise.all([loadStats(), loadOrders(1), loadProducts(), loadSiteConfig()]);
+}
+
+// -- TABS -----------------------------------------------------
+function switchTab(tab) {
+  ['orders', 'products', 'promotions', 'content', 'reviews'].forEach(t => {
+    document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle('active', t === tab);
+    document.getElementById(`content${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'reviews') loadAdminReviews();
+  if (tab === 'promotions') { loadPromotions(); loadPromoCodes(); }
+}
+
+// -- PRODUCT REVIEWS (moderation) -------------------------------
+async function loadAdminReviews() {
+  const ar = adminLang === 'ar';
+  const tr = (en, arT) => (ar ? arT : en);
+  const titleEl = document.getElementById('revTitle');
+  if (titleEl) titleEl.textContent = tr('Product Reviews', 'تقييمات المنتجات');
+  const subEl = document.getElementById('revSub');
+  if (subEl) subEl.textContent = tr('Approve or remove customer reviews before they appear on product pages.', 'راجع، وافق، أو احذف تقييمات العملاء قبل ظهورها في صفحات المنتجات.');
+  const refreshEl = document.getElementById('revRefresh');
+  if (refreshEl) refreshEl.textContent = tr('Refresh', 'تحديث');
+  const filter = document.getElementById('reviewFilter');
+  if (filter && !filter.dataset.built) {
+    const cur = filter.value;
+    filter.innerHTML =
+      `<option value="">${tr('All reviews', 'كل التقييمات')}</option>` +
+      `<option value="pending">${tr('Pending only', 'المعلّقة فقط')}</option>` +
+      `<option value="approved">${tr('Approved only', 'المقبولة فقط')}</option>`;
+    filter.value = cur;
+    filter.dataset.built = '1';
+  }
+  const list = document.getElementById('reviewsList');
+  list.innerHTML = `<div class="empty-state"><p>${tr('Loading...', 'جارٍ التحميل...')}</p></div>`;
+  try {
+    const status = filter ? filter.value : '';
+    const res = await fetch(`${API}/reviews/admin${status ? '?status=' + status : ''}`, authHeaders());
+    if (!res.ok) throw new Error();
+    const { data } = await res.json();
+    renderAdminReviews(data || []);
+  } catch {
+    list.innerHTML = `<div class="empty-state"><p>${tr('Could not load reviews.', 'تعذّر تحميل التقييمات.')}</p></div>`;
+  }
+}
+
+function renderAdminReviews(rows) {
+  const ar = adminLang === 'ar';
+  const tr = (en, arT) => (ar ? arT : en);
+  const list = document.getElementById('reviewsList');
+  if (!rows.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">-</div><p>${tr('No reviews yet.', 'لا توجد تقييمات بعد.')}</p></div>`;
+    return;
+  }
+  const stars = (r) => '★'.repeat(Math.max(0, Math.min(5, Number(r)))) + '☆'.repeat(5 - Math.max(0, Math.min(5, Number(r))));
+  list.innerHTML = rows.map((r) => `
+    <div class="review-mod-card${r.isApproved ? '' : ' pending'}">
+      <div class="rmc-head">
+        <div><span class="rmc-product">${esc(r.productName || ('#' + r.productId))}</span> <span class="rmc-stars">${stars(r.rating)}</span></div>
+        <span class="rmc-status ${r.isApproved ? 'ok' : 'pend'}">${r.isApproved ? tr('Approved', 'مقبول') : tr('Pending', 'معلّق')}</span>
+      </div>
+      <div class="rmc-author">${esc(r.authorName)} · <span class="rmc-date">${r.createdAt ? new Date(r.createdAt).toLocaleDateString(currentDateLocale()) : '-'}</span></div>
+      <div class="rmc-text">${esc(r.comment)}</div>
+      <div class="rmc-actions">
+        ${r.isApproved
+          ? `<button class="action-btn" onclick="setReviewApproval(${r.id}, false)">${tr('Hide', 'إخفاء')}</button>`
+          : `<button class="action-btn approve-btn" onclick="setReviewApproval(${r.id}, true)">${tr('Approve', 'موافقة')}</button>`}
+        <button class="action-btn del-btn" onclick="deleteReviewAdmin(${r.id})">${tr('Delete', 'حذف')}</button>
+      </div>
+    </div>`).join('');
+}
+
+async function setReviewApproval(id, approved) {
+  try {
+    const res = await fetch(`${API}/reviews/admin/${id}`, {
+      method: 'PATCH', ...authHeaders(), body: JSON.stringify({ isApproved: approved }),
+    });
+    if (!res.ok) throw new Error();
+    const { message } = await res.json();
+    showToast(message || 'OK', 'success');
+    loadAdminReviews();
+  } catch { showToast(adminLang === 'ar' ? 'فشل التحديث' : 'Update failed', 'error'); }
+}
+
+async function deleteReviewAdmin(id) {
+  if (!confirm(adminLang === 'ar' ? 'حذف التقييم نهائياً؟' : 'Delete this review permanently?')) return;
+  try {
+    const res = await fetch(`${API}/reviews/admin/${id}`, { method: 'DELETE', ...authHeaders() });
+    if (!res.ok) throw new Error();
+    showToast(adminLang === 'ar' ? 'تم الحذف' : 'Deleted', 'success');
+    loadAdminReviews();
+  } catch { showToast(adminLang === 'ar' ? 'فشل الحذف' : 'Delete failed', 'error'); }
+}
+
+// -- STATS -----------------------------------------------------
+async function loadStats() {
+  try {
+    const res = await fetch(`${API}/orders/admin/stats`, authHeaders());
+    if (!res.ok) return;
+    const { data } = await res.json();
+    document.getElementById('sTotal').textContent     = data.total ?? '-';
+    document.getElementById('sNew').textContent       = data.new ?? '-';
+    document.getElementById('sConfirmed').textContent = data.confirmed ?? '-';
+    document.getElementById('sShipping').textContent  = data.shipping ?? '-';
+    document.getElementById('sDelivered').textContent = data.delivered ?? '-';
+    document.getElementById('sCancelled').textContent = data.cancelled ?? '-';
+    const rev = document.getElementById('sRevenue');
+    if (rev) rev.textContent = (data.revenue || 0).toLocaleString(currentNumberLocale()) + ' EGP';
+    const totOrders = document.getElementById('sTotalOrders');
+    if (totOrders) totOrders.textContent = data.total ?? '-';
+  } catch {}
+}
+
+// Click a stat card to filter the orders list by that status
+function filterByStat(status) {
+  const sel = document.getElementById('statusFilter');
+  if (sel) sel.value = status;
+  document.querySelectorAll('#contentOrders .stat-card').forEach((c) => c.classList.remove('stat-active'));
+  const map = { '': 1, new: 2, confirmed: 3, shipping: 4, delivered: 5, cancelled: 6 };
+  const nth = map[status];
+  if (nth) {
+    const card = document.querySelector(`#contentOrders .stat-card:nth-child(${nth})`);
+    if (card) card.classList.add('stat-active');
+  }
+  loadOrders(1);
+}
+
+// -- LOAD ORDERS -------------------------------------------------
+async function loadOrders(page = currentPage) {
+  currentPage = page;
+  const status = document.getElementById('statusFilter').value;
+  const search = document.getElementById('searchInput').value.trim();
+  const url = `${API}/orders/admin?page=${page}&limit=${PER_PAGE}${status?'&status='+status:''}${search?'&search='+encodeURIComponent(search):''}`;
+
+  document.getElementById('ordersBody').innerHTML = `<tr class="loading-row"><td colspan="8">${esc(t('common.loading'))}</td></tr>`;
+  document.getElementById('ordersPagination').style.display = 'none';
+
+  try {
+    const res = await fetch(url, authHeaders());
+    if (!res.ok) { showBackendError('ordersBody', 8); return; }
+    const result = await res.json();
+    currentOrders = result.orders || [];
+    currentOrdersPagination = result.pagination || null;
+    renderOrdersTable(currentOrders);
+    renderPagination(currentOrdersPagination, 'ordersPagination', loadOrders);
+  } catch {
+    showBackendError('ordersBody', 8);
+  }
+}
+
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => loadOrders(1), 400);
+}
+
+function renderOrdersTable(orders) {
+  const tbody = document.getElementById('ordersBody');
+  if (!orders.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">-</div><p>${esc(t('orders.empty'))}</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = orders.map(o => {
+    const date = o.createdAt ? new Date(o.createdAt).toLocaleDateString(currentDateLocale(),{day:'2-digit',month:'short',year:'numeric'}) : '-';
+    const total = o.total > 0 ? o.total.toLocaleString(currentNumberLocale()) + ' EGP' : o.subtotal > 0 ? o.subtotal.toLocaleString(currentNumberLocale()) + ' EGP' : '-';
+    return `
+    <tr id="row-${o.id}">
+      <td data-label="#ID"><span class="order-id">#${o.id}</span></td>
+      <td data-label="${esc(t('orders.table.customer'))}"><div class="order-name">${esc(o.fullName)}</div></td>
+      <td data-label="${esc(t('orders.table.phone'))}"><span class="order-phone">${esc(o.phone)}</span></td>
+      <td data-label="${esc(t('orders.table.city'))}"><span class="order-phone">${esc(o.city)}</span></td>
+      <td data-label="${esc(t('common.total'))}"><span class="order-total">${total}</span></td>
+      <td data-label="${esc(t('orders.table.status'))}">
+        <select class="status-select status-${o.status}" onchange="quickUpdateStatus(${o.id}, this)">
+          ${['new','confirmed','shipping','delivered','cancelled'].map(s =>
+            `<option value="${s}"${o.status===s?' selected':''}>${statusLabel(s)}</option>`
+          ).join('')}
+        </select>
+      </td>
+      <td data-label="${esc(t('orders.table.date'))}" style="color:var(--muted);font-size:.8rem;white-space:nowrap">${date}</td>
+      <td data-label="${esc(t('orders.table.actions'))}">
+        <div class="actions-cell">
+          <button class="action-btn view-btn" onclick="openOrderModal(${o.id})">${esc(t('orders.view'))}</button>
+          <a class="action-btn wa-btn" href="https://wa.me/${toWhatsAppNumber(o.phone)}" onclick="openOrderWhatsApp(${o.id}, event)" target="_blank" rel="noopener">${esc(t('orders.whatsapp'))}</a>
+          <button class="action-btn del-btn" onclick="confirmDeleteOrder(${o.id})">${esc(t('common.delete'))}</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function statusLabel(s) {
+  const map = {
+    new: t('messages.status.new'),
+    confirmed: t('messages.status.confirmed'),
+    shipping: t('messages.status.shipping'),
+    delivered: t('messages.status.delivered'),
+    cancelled: t('messages.status.cancelled')
+  };
+  return map[s] || s;
+}
+
+async function quickUpdateStatus(id, sel) {
+  try {
+    const res = await fetch(`${API}/orders/admin/${id}/status`, {
+      method:'PATCH', ...authHeaders(), body: JSON.stringify({ status: sel.value }),
+    });
+    if (!res.ok) throw new Error();
+    sel.className = 'status-select status-' + sel.value;
+    showToast(t('messages.statusUpdated', { status: statusLabel(sel.value) }), 'success');
+    loadStats();
+  } catch { showToast(t('messages.failedUpdateStatus'), 'error'); }
+}
+
+// -- ORDER DETAIL MODAL -----------------------------------------
+async function openOrderModal(id) {
+  currentOrderId = id;
+  try {
+    const res = await fetch(`${API}/orders/admin/${id}`, authHeaders());
+    const { data: o } = await res.json();
+    document.getElementById('modalOrderTitle').textContent = `Order #${o.id}`;
+    document.getElementById('mName').textContent    = o.fullName;
+    document.getElementById('mPhone').textContent   = o.phone;
+    document.getElementById('mCity').textContent    = o.city;
+    document.getElementById('mAddress').textContent = o.address;
+    document.getElementById('mNotes').textContent   = o.notes || '-';
+    document.getElementById('mDate').textContent    = o.createdAt ? new Date(o.createdAt).toLocaleString(currentDateLocale()) : '-';
+    document.getElementById('mSubtotal').textContent = (o.subtotal||0).toLocaleString(currentNumberLocale()) + ' EGP';
+    document.getElementById('mShipping').textContent = (o.shippingFee||0).toLocaleString(currentNumberLocale()) + ' EGP';
+    document.getElementById('mDiscount').textContent = (o.discount||0).toLocaleString(currentNumberLocale()) + ' EGP'
+      + (o.promoCode ? `  (${adminLang === 'ar' ? 'كود' : 'code'} ${o.promoCode}: -${(o.promoCodeDiscount||0).toLocaleString(currentNumberLocale())})` : '');
+    document.getElementById('mTotal').textContent    = ((o.total||o.subtotal||0)).toLocaleString(currentNumberLocale()) + ' EGP';
+    document.getElementById('mAdminNotes').value    = o.adminNotes || '';
+    document.getElementById('mStatusSelect').value  = o.status;
+    const mWaDigits = toWhatsAppNumber(o.phone);
+    const mWaBtn = document.getElementById('mWaBtn');
+    if (mWaDigits) {
+      mWaBtn.href = `https://wa.me/${mWaDigits}?text=${encodeURIComponent('Hi '+o.fullName+', your STAR order #'+o.id+' is confirmed!')}`;
+      mWaBtn.style.opacity = '';
+      mWaBtn.style.pointerEvents = '';
+      mWaBtn.removeAttribute('aria-disabled');
+    } else {
+      mWaBtn.removeAttribute('href');
+      mWaBtn.style.opacity = '0.5';
+      mWaBtn.style.pointerEvents = 'none';
+      mWaBtn.setAttribute('aria-disabled','true');
+    }
+
+    const itemRows = (o.items||[]).map(i => {
+      const promo = i.selectedOptions && i.selectedOptions.promotion;
+      let promoLine = '';
+      if (promo) {
+        const bits = [`🏷️ ${esc(promo.title || '')}`];
+        if (promo.freeQty > 0) bits.push(adminLang === 'ar' ? `${promo.freeQty} مجانًا` : `${promo.freeQty} free`);
+        if (promo.lineDiscount > 0) bits.push(`- ${Number(promo.lineDiscount).toLocaleString(currentNumberLocale())} EGP`);
+        promoLine = `<div class="order-item-promo">${bits.join(' · ')}</div>`;
+      }
+      return `
+      <tr>
+        <td>${esc(i.itemName)}${promoLine}</td>
+        <td>${i.cableType ? i.cableType : '-'}</td>
+        <td>${i.quantity}</td>
+        <td>${(i.unitPrice||0).toLocaleString(currentNumberLocale())} EGP</td>
+        <td style="color:var(--blue);font-weight:700">${(i.totalPrice||0).toLocaleString(currentNumberLocale())} EGP</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--muted)">${esc(t('messages.noItems'))}</td></tr>`;
+    document.getElementById('mItems').innerHTML = itemRows;
+
+    document.getElementById('orderOverlay').classList.add('open');
+  } catch { showToast(t('messages.failedLoadOrderDetails'), 'error'); }
+}
+
+async function saveOrderFromModal() {
+  if (!currentOrderId) return;
+  const status = document.getElementById('mStatusSelect').value;
+  const adminNotes = document.getElementById('mAdminNotes').value;
+  try {
+    await fetch(`${API}/orders/admin/${currentOrderId}/status`, {
+      method:'PATCH', ...authHeaders(), body: JSON.stringify({ status }),
+    });
+    await fetch(`${API}/orders/admin/${currentOrderId}/notes`, {
+      method:'PATCH', ...authHeaders(), body: JSON.stringify({ adminNotes }),
+    });
+    showToast(t('messages.orderSaved'), 'success');
+    closeOrderModal();
+    loadOrders(currentPage);
+    loadStats();
+  } catch { showToast(t('messages.failedSave'), 'error'); }
+}
+
+function deleteFromModal() {
+  if (!currentOrderId) return;
+  closeOrderModal();
+  confirmDeleteOrder(currentOrderId);
+}
+
+function closeOrderModal() {
+  document.getElementById('orderOverlay').classList.remove('open');
+  currentOrderId = null;
+}
+
+// -- PRODUCTS -------------------------------------------------
+let allProducts = [];
+
+async function loadProducts() {
+  document.getElementById('productsBody').innerHTML = `<tr class="loading-row"><td colspan="8">${esc(t('common.loading'))}</td></tr>`;
+  try {
+    const res = await fetch(`${API}/products/admin/all`, authHeaders());
+    if (!res.ok) { showBackendError('productsBody', 8); return; }
+    const { data } = await res.json();
+    allProducts = data;
+    renderProductsTable(data);
+  } catch { showBackendError('productsBody', 8); }
+}
+
+function renderProductsTable(products) {
+  const tbody = document.getElementById('productsBody');
+  if (!products.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">-</div><p>${esc(t('products.empty'))}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = products.map(p => `
+    <tr id="prow-${p.id}">
+      <td data-label="${esc(t('products.table.image'))}"><img class="product-img-cell" src="${esc(p.imageUrl || '/assets/images/product-1.jpg')}" alt="" onerror="this.onerror=null;this.src='/assets/images/product-1.jpg'"/></td>
+      <td data-label="${esc(t('products.table.product'))}">
+        <div class="product-name-cell">${esc(p.name)}</div>
+        <div class="product-slug-cell">${esc(p.slug)}</div>
+      </td>
+      <td data-label="${esc(t('products.table.category'))}" style="font-size:.82rem;color:var(--muted)">${esc(document.getElementById('pCategory')?.querySelector(`option[value="${p.category}"]`)?.textContent || p.category)}</td>
+      <td data-label="${esc(t('products.table.price'))}">
+        <div style="font-weight:700;color:var(--blue)">${p.price.toLocaleString(currentNumberLocale())} EGP</div>
+        ${p.oldPrice ? `<div style="font-size:.76rem;color:var(--muted);text-decoration:line-through">${p.oldPrice.toLocaleString(currentNumberLocale())}</div>` : ''}
+      </td>
+      <td data-label="${esc(t('products.table.stock'))}" style="font-weight:600;color:${p.stock<=5?'var(--red)':p.stock<=20?'var(--yellow)':'var(--text)'}">${p.stock}</td>
+      <td data-label="${esc(t('products.table.active'))}">
+        <button class="toggle-btn ${p.isActive?'toggle-active':'toggle-inactive'}" onclick="toggleActive(${p.id}, ${p.isActive})">
+          ${p.isActive ? esc(t('products.active')) : esc(t('products.off'))}
+        </button>
+      </td>
+      <td data-label="${esc(t('products.table.featured'))}">
+        <button class="featured-star${p.isFeatured?'':' off'}" onclick="toggleFeatured(${p.id}, ${p.isFeatured})">*</button>
+      </td>
+      <td data-label="${esc(t('products.table.actions'))}">
+        <div class="actions-cell">
+          <button class="action-btn edit-btn" onclick="openProductModal(${p.id})">${esc(t('products.edit'))}</button>
+          <button class="action-btn del-btn" onclick="confirmDeleteProduct(${p.id})">${esc(t('common.delete'))}</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function toggleActive(id, isActive) {
+  await patchProduct(id, { isActive: !isActive });
+}
+async function toggleFeatured(id, isFeatured) {
+  await patchProduct(id, { isFeatured: !isFeatured });
+}
+async function patchProduct(id, data) {
+  try {
+    const res = await fetch(`${API}/products/admin/${id}`, {
+      method:'PATCH', ...authHeaders(), body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error();
+    showToast(t('messages.productUpdated'), 'success');
+    loadProducts();
+  } catch { showToast(t('messages.failedUpdateProduct'), 'error'); }
+}
+
+function openProductModal(id = null) {
+  const form = document.getElementById('productForm');
+  form.reset();
+  document.getElementById('pId').value = '';
+  document.getElementById('productModalTitle').textContent = id ? t('products.modal.edit') : t('products.modal.add');
+
+  if (id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('pId').value = p.id;
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pSlug').value = p.slug;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pOldPrice').value = p.oldPrice || '';
+    document.getElementById('pCategory').value = p.category;
+    document.getElementById('pStock').value = p.stock;
+    document.getElementById('pImageUrl').value = p.imageUrl;
+    document.getElementById('pShortDesc').value = p.shortDescription;
+    document.getElementById('pDesc').value = p.description;
+    document.getElementById('pIsActive').checked = p.isActive;
+    document.getElementById('pIsFeatured').checked = p.isFeatured;
+    document.getElementById('pOnSale').checked = !!p.saleActive;
+    document.getElementById('pSalePrice').value = p.salePrice ?? '';
+    document.getElementById('pSaleEndsAt').value = p.saleEndsAt ? toLocalInput(p.saleEndsAt) : '';
+  }
+  toggleSaleFields();
+  resetUploadStatus('pImageUploadStatus');
+  syncImagePreview('pImageUrl', 'pImagePreviewImg', 'pImagePreviewEmpty');
+  document.getElementById('productOverlay').classList.add('open');
+}
+
+function toggleSaleFields() {
+  const on = document.getElementById('pOnSale').checked;
+  document.getElementById('pSaleFields').style.display = on ? '' : 'none';
+}
+
+function closeProductModal() {
+  document.getElementById('productOverlay').classList.remove('open');
+}
+
+function resetUploadStatus(statusId, message = t('messages.imageHint')) {
+  const status = document.getElementById(statusId);
+  if (!status) return;
+  status.textContent = message;
+  status.className = 'cms-upload-status';
+}
+
+function setUploadStatus(statusId, message, tone = '') {
+  const status = document.getElementById(statusId);
+  if (!status) return;
+  status.textContent = message;
+  status.className = `cms-upload-status${tone ? ` ${tone}` : ''}`;
+}
+
+function syncImagePreview(inputId, previewImgId, previewEmptyId) {
+  const input = document.getElementById(inputId);
+  const img = document.getElementById(previewImgId);
+  const empty = document.getElementById(previewEmptyId);
+  const value = input?.value.trim() || '';
+
+  if (!img || !empty) return;
+
+  if (!value) {
+    img.removeAttribute('src');
+    img.style.display = 'none';
+    empty.textContent = inputId === 'sfLogoUrl' ? t('messages.noLogoSelected') : t('messages.noProductImageSelected');
+    empty.style.display = 'flex';
+    return;
+  }
+
+  img.onload = () => {
+    img.style.display = 'block';
+    empty.style.display = 'none';
+  };
+  img.onerror = () => {
+    img.style.display = 'none';
+    empty.textContent = t('messages.imageLoadFailed');
+    empty.style.display = 'flex';
+  };
+  img.src = value;
+}
+
+function triggerImageUpload(fileInputId) {
+  document.getElementById(fileInputId)?.click();
+}
+
+async function handleImageUpload(event) {
+  const fileInput = event.target;
+  const file = fileInput.files?.[0];
+  if (!file) return;
+  if (!ensureAdminSession()) {
+    fileInput.value = '';
+    return;
+  }
+
+  const targetInputId = fileInput.dataset.targetInput;
+  const previewImgId = fileInput.dataset.previewImg;
+  const previewEmptyId = fileInput.dataset.previewEmpty;
+  const statusId = fileInput.dataset.status;
+  const kind = fileInput.dataset.kind || 'image';
+
+  setUploadStatus(statusId, t('messages.uploading', { file: file.name }), 'loading');
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  try {
+    const res = await fetch(`${API}/admin/upload-image`, {
+      method: 'POST',
+      headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {},
+      body: formData,
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || 'Upload failed');
+
+    const imageUrl = result.data?.url || '';
+    const targetInput = document.getElementById(targetInputId);
+    if (targetInput) targetInput.value = imageUrl;
+    if (fileInput.dataset.path) updateContentBlockField(fileInput.dataset.path, imageUrl);
+    if (fileInput.dataset.selectedMedia === '1') updateSelectedMediaValue(imageUrl);
+
+    syncImagePreview(targetInputId, previewImgId, previewEmptyId);
+    setUploadStatus(statusId, t('messages.uploadReady'), 'success');
+
+    if (kind === 'logo') {
+      siteConfig.storefront = { ...siteConfig.storefront, logoUrl: imageUrl };
+      applyAdminBranding();
+    }
+
+    showToast(t('messages.imageUploaded'), 'success');
+  } catch (error) {
+    const message = apiErrorMessage(error, t('messages.uploadFailed'));
+    setUploadStatus(statusId, message, 'error');
+    showToast(message, 'error');
+  } finally {
+    fileInput.value = '';
+  }
+}
+
+function autoSlug() {
+  const pId = document.getElementById('pId').value;
+  if (pId) return; // Don't auto-change slug when editing
+  const name = document.getElementById('pName').value;
+  document.getElementById('pSlug').value = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+async function saveProduct(e) {
+  if (e) e.preventDefault();
+  const id = document.getElementById('pId').value;
+  const data = {
+    name:             document.getElementById('pName').value.trim(),
+    slug:             document.getElementById('pSlug').value.trim(),
+    price:            parseFloat(document.getElementById('pPrice').value),
+    oldPrice:         parseFloat(document.getElementById('pOldPrice').value) || null,
+    category:         document.getElementById('pCategory').value,
+    stock:            parseInt(document.getElementById('pStock').value) || 0,
+    imageUrl:         document.getElementById('pImageUrl').value.trim(),
+    shortDescription: document.getElementById('pShortDesc').value.trim(),
+    description:      document.getElementById('pDesc').value.trim(),
+    isActive:         document.getElementById('pIsActive').checked,
+    isFeatured:       document.getElementById('pIsFeatured').checked,
+    saleActive:       document.getElementById('pOnSale').checked,
+    salePrice:        document.getElementById('pSalePrice').value === '' ? null : parseFloat(document.getElementById('pSalePrice').value),
+    saleEndsAt:       document.getElementById('pSaleEndsAt').value || null,
+  };
+
+  try {
+    const url = id ? `${API}/products/admin/${id}` : `${API}/products/admin`;
+    const method = id ? 'PATCH' : 'POST';
+    const res = await fetch(url, { method, ...authHeaders(), body: JSON.stringify(data) });
+    const result = await res.json();
+    if (!res.ok) {
+      const msg = result.errors?.map(e=>e.message).join(', ') || result.message;
+      showToast(msg, 'error');
+      return;
+    }
+    showToast(id ? t('messages.productUpdatedDone') : t('messages.productCreatedDone'), 'success');
+    closeProductModal();
+    loadProducts();
+  } catch { showToast(t('messages.failedSaveProduct'), 'error'); }
+}
+
+// -- SALES & PROMOTIONS ----------------------------------------
+// Bilingual copy for the promotions tab + wizard (applied via [data-pk]).
+const PROMO_I18N = {
+  en: {
+    tab: 'Sales & Promotions',
+    pageTitle: 'Sales & Promotions',
+    pageSub: 'Create time-boxed offers, discounts, and buy-X-get-Y deals. Pricing is always re-checked on the server at checkout.',
+    cols: ['Offer', 'Type', 'Targets', 'Window', 'Priority', 'Status', 'On', 'Actions'],
+    modalAdd: 'New Promotion', modalEdit: 'Edit Promotion',
+    step1: 'Type', step2: 'Products', step3: 'Details', step4: 'Duration', step5: 'Review',
+    type_b1g1: 'Buy 1, Get 1 Free', type_b1g1_d: 'Every 2 in the cart, 1 is free.',
+    type_b2g1: 'Buy 2, Get 1 Free', type_b2g1_d: 'Every 3 in the cart, 1 is free.',
+    type_bxgy: 'Buy X, Get Y Free', type_bxgy_d: 'You choose the paid and free counts.',
+    type_percent: 'Percentage Discount', type_percent_d: 'e.g. 20% off the price.',
+    type_fixed: 'Fixed Amount Off', type_fixed_d: 'e.g. 100 EGP off each unit.',
+    type_special: 'Special Price', type_special_d: 'Set a fixed sale price during the offer.',
+    appliesTo: 'This offer applies to', allProducts: 'All products', specific: 'Specific products / bundle',
+    chooseProducts: 'Choose products', search: 'Search products...',
+    buyQty: 'Paid quantity', getQty: 'Free quantity', percent: 'Discount percentage (%)',
+    amount: 'Discount amount (EGP)', special: 'Special price (EGP)',
+    title: 'Offer title *', titlePh: 'e.g. Summer Sale', badge: 'Badge label (optional)', badgePh: 'e.g. Sale, -20%',
+    desc: 'Short description (optional)', descPh: 'Shown to customers under the price',
+    priority: 'Priority (higher wins)', maxUses: 'Max uses per order (optional)', optional: 'Optional',
+    maxFree: 'Max free items per order (optional)',
+    stacking: 'Allow stacking with other offers', availableAll: 'Available to all customers',
+    startMode: 'When does it start?', startNow: 'Start immediately', scheduled: 'Schedule a start time',
+    startsAt: 'Start date & time', endsAt: 'End date & time (optional)',
+    durationHint: 'Leave the end empty for an ongoing offer (no countdown timer).',
+    activate: 'Activate this promotion now',
+    back: 'Back', cancel: 'Cancel', next: 'Next', save: 'Save & Activate',
+    // dynamic
+    empty: 'No promotions yet. Create your first offer.',
+    targetAll: 'All products', targetN: '{n} product(s)',
+    ongoing: 'Ongoing', scheduledLbl: 'Scheduled', expired: 'Expired', live: 'Live', paused: 'Paused',
+    active: 'Active', edit: 'Edit', del: 'Delete', on: 'On', off: 'Off',
+    tBogo: 'Buy X Get Y', tPercent: 'Percent off', tFixed: 'Amount off', tSpecial: 'Special price',
+    previewTitle: 'Customer preview', sampleProduct: 'Sample product', endsIn: 'Ends in',
+    calcTitle: 'How it is calculated', calcAdds: 'Customer adds {q}',
+    original: 'Original', discountLbl: 'Discount', freeLbl: 'Free items', totalLbl: 'They pay',
+    created: 'Promotion created.', updated: 'Promotion updated.', deleted: 'Promotion deleted.',
+    saveFail: 'Failed to save the promotion.', loadFail: 'Failed to load promotions.',
+    delTitle: 'Delete promotion', delMsg: 'Delete "{name}"? Existing orders keep their prices.',
+    errType: 'Choose an offer type.', errProducts: 'Select at least one product.',
+    errTitle: 'Enter an offer title.', errBogo: 'Paid and free quantities must be at least 1.',
+    errPercent: 'Percentage must be between 1 and 100.', errAmount: 'Discount amount must be greater than 0.',
+    errSpecial: 'Special price must be 0 or more.', errStart: 'Choose a start date & time.',
+    errEndPast: 'The end time must be in the future.', errEndOrder: 'End time must be after the start time.',
+  },
+  ar: {
+    tab: 'العروض والتخفيضات',
+    pageTitle: 'العروض والتخفيضات',
+    pageSub: 'أنشئ عروضًا محدّدة بوقت، وخصومات، وعروض «اشترِ X واحصل على Y». يُعاد حساب السعر دائمًا على السيرفر عند إتمام الطلب.',
+    cols: ['العرض', 'النوع', 'المنتجات', 'المدة', 'الأولوية', 'الحالة', 'تشغيل', 'إجراءات'],
+    modalAdd: 'عرض جديد', modalEdit: 'تعديل العرض',
+    step1: 'النوع', step2: 'المنتجات', step3: 'التفاصيل', step4: 'المدة', step5: 'مراجعة',
+    type_b1g1: 'اشترِ 1 واحصل على 1 مجانًا', type_b1g1_d: 'كل قطعتين في السلة، واحدة مجانًا.',
+    type_b2g1: 'اشترِ 2 واحصل على 1 مجانًا', type_b2g1_d: 'كل 3 قطع في السلة، واحدة مجانًا.',
+    type_bxgy: 'اشترِ X واحصل على Y مجانًا', type_bxgy_d: 'أنت تحدد عدد المدفوع والمجاني.',
+    type_percent: 'خصم بنسبة مئوية', type_percent_d: 'مثال: خصم 20% من السعر.',
+    type_fixed: 'خصم بقيمة ثابتة', type_fixed_d: 'مثال: خصم 100 جنيه لكل قطعة.',
+    type_special: 'سعر خاص', type_special_d: 'حدد سعر بيع ثابتًا أثناء العرض.',
+    appliesTo: 'يُطبَّق هذا العرض على', allProducts: 'كل المنتجات', specific: 'منتجات / باندل محدد',
+    chooseProducts: 'اختر المنتجات', search: 'ابحث عن منتجات...',
+    buyQty: 'الكمية المدفوعة', getQty: 'الكمية المجانية', percent: 'نسبة الخصم (%)',
+    amount: 'قيمة الخصم (جنيه)', special: 'السعر الخاص (جنيه)',
+    title: 'عنوان العرض *', titlePh: 'مثال: تخفيضات الصيف', badge: 'نص الشارة (اختياري)', badgePh: 'مثال: عرض، -20%',
+    desc: 'وصف قصير (اختياري)', descPh: 'يظهر للعميل تحت السعر',
+    priority: 'الأولوية (الأعلى يفوز)', maxUses: 'أقصى استخدام لكل طلب (اختياري)', optional: 'اختياري',
+    maxFree: 'أقصى عدد قطع مجانية لكل طلب (اختياري)',
+    stacking: 'السماح بدمج العرض مع عروض أخرى', availableAll: 'متاح لكل العملاء',
+    startMode: 'متى يبدأ؟', startNow: 'ابدأ فورًا', scheduled: 'جدولة وقت البدء',
+    startsAt: 'تاريخ ووقت البدء', endsAt: 'تاريخ ووقت الانتهاء (اختياري)',
+    durationHint: 'اترك حقل الانتهاء فارغًا لعرض مستمر (بدون مؤقّت تنازلي).',
+    activate: 'تفعيل هذا العرض الآن',
+    back: 'رجوع', cancel: 'إلغاء', next: 'التالي', save: 'حفظ وتفعيل',
+    empty: 'لا توجد عروض بعد. أنشئ أول عرض.',
+    targetAll: 'كل المنتجات', targetN: '{n} منتج',
+    ongoing: 'مستمر', scheduledLbl: 'مجدول', expired: 'منتهٍ', live: 'يعمل', paused: 'متوقف',
+    active: 'مُفعّل', edit: 'تعديل', del: 'حذف', on: 'تشغيل', off: 'إيقاف',
+    tBogo: 'اشترِ X واحصل على Y', tPercent: 'خصم نسبة', tFixed: 'خصم قيمة', tSpecial: 'سعر خاص',
+    previewTitle: 'معاينة العميل', sampleProduct: 'منتج تجريبي', endsIn: 'ينتهي خلال',
+    calcTitle: 'طريقة الحساب', calcAdds: 'العميل يضيف {q}',
+    original: 'الأصلي', discountLbl: 'الخصم', freeLbl: 'قطع مجانية', totalLbl: 'يدفع',
+    created: 'تم إنشاء العرض.', updated: 'تم تحديث العرض.', deleted: 'تم حذف العرض.',
+    saveFail: 'فشل حفظ العرض.', loadFail: 'فشل تحميل العروض.',
+    delTitle: 'حذف العرض', delMsg: 'حذف «{name}»؟ الطلبات الحالية تحتفظ بأسعارها.',
+    errType: 'اختر نوع العرض.', errProducts: 'اختر منتجًا واحدًا على الأقل.',
+    errTitle: 'أدخل عنوان العرض.', errBogo: 'الكمية المدفوعة والمجانية يجب أن تكون 1 على الأقل.',
+    errPercent: 'النسبة يجب أن تكون بين 1 و100.', errAmount: 'قيمة الخصم يجب أن تكون أكبر من 0.',
+    errSpecial: 'السعر الخاص يجب أن يكون 0 أو أكثر.', errStart: 'اختر تاريخ ووقت البدء.',
+    errEndPast: 'وقت الانتهاء يجب أن يكون في المستقبل.', errEndOrder: 'وقت الانتهاء يجب أن يكون بعد وقت البدء.',
+  },
+};
+function pk() { return PROMO_I18N[adminLang] || PROMO_I18N.en; }
+function pmField(id) { return document.getElementById(id); }
+
+let promotions = [];
+let pmStep = 1;
+let pmSelected = new Set();
+let pmProductsLoaded = false;
+
+// Translate the promotions tab + wizard. Called on boot, on language switch, and on modal open.
+function applyPromoI18n() {
+  const d = pk();
+  document.querySelectorAll('#contentPromotions [data-pk], #promotionModal [data-pk]').forEach((el) => {
+    const key = el.getAttribute('data-pk');
+    if (d[key] != null) el.textContent = d[key];
+  });
+  document.querySelectorAll('#contentPromotions [data-pk-ph], #promotionModal [data-pk-ph]').forEach((el) => {
+    const key = el.getAttribute('data-pk-ph');
+    if (d[key] != null) el.placeholder = d[key];
+  });
+  const set = (id, txt) => { const el = document.getElementById(id); if (el && txt != null) el.textContent = txt; };
+  set('tabPromotions', d.tab);
+  set('promoPageTitle', d.pageTitle);
+  set('promoPageSub', d.pageSub);
+  const heads = document.querySelectorAll('#promoTableHead th');
+  if (heads.length === d.cols.length) d.cols.forEach((c, i) => { heads[i].textContent = c; });
+}
+
+async function loadPromotions() {
+  applyPromoI18n();
+  const body = document.getElementById('promotionsBody');
+  if (body) body.innerHTML = `<tr class="loading-row"><td colspan="8">${esc(t('common.loading'))}</td></tr>`;
+  try {
+    const res = await fetch(`${API}/promotions/admin`, authHeaders());
+    if (!res.ok) { showBackendError('promotionsBody', 8); return; }
+    const { data } = await res.json();
+    promotions = Array.isArray(data) ? data : [];
+    renderPromotionsTable();
+  } catch { showBackendError('promotionsBody', 8); }
+}
+
+function promoTypeLabel(p) {
+  const d = pk();
+  if (p.offerType === 'bogo') return `${d.tBogo} (${p.buyQty || 1}+${p.getQty || 1})`;
+  if (p.offerType === 'percent') return `${d.tPercent} (${p.discountPercent || 0}%)`;
+  if (p.offerType === 'fixed') return `${d.tFixed} (${p.discountAmount || 0})`;
+  if (p.offerType === 'special_price') return `${d.tSpecial} (${p.specialPrice || 0})`;
+  return p.offerType;
+}
+
+function promoStatus(p) {
+  const d = pk();
+  const now = Date.now();
+  const P = window.STAR_PROMO;
+  if (!p.isActive) return { cls: 'toggle-inactive', txt: d.paused };
+  if (P && P.isPromotionLive(p, now)) return { cls: 'toggle-active', txt: d.live };
+  if (p.startsAt && Date.parse(p.startsAt) > now) return { cls: 'toggle-scheduled', txt: d.scheduledLbl };
+  if (p.endsAt && Date.parse(p.endsAt) <= now) return { cls: 'toggle-inactive', txt: d.expired };
+  return { cls: 'toggle-active', txt: d.active };
+}
+
+function promoWindow(p) {
+  const d = pk();
+  const fmt = (iso) => new Date(iso).toLocaleString(currentDateLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const start = p.startsAt ? fmt(p.startsAt) : (adminLang === 'ar' ? 'الآن' : 'Now');
+  const end = p.endsAt ? fmt(p.endsAt) : d.ongoing;
+  return `${esc(start)} → ${esc(end)}`;
+}
+
+function renderPromotionsTable() {
+  const tbody = document.getElementById('promotionsBody');
+  const d = pk();
+  if (!promotions.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">%</div><p>${esc(d.empty)}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = promotions.map((p) => {
+    const st = promoStatus(p);
+    const targets = p.appliesTo === 'all' ? d.targetAll : d.targetN.replace('{n}', (p.productIds || []).length);
+    const badge = p.badgeText ? `<span class="promo-row-badge">${esc(p.badgeText)}</span>` : '';
+    return `
+    <tr id="promorow-${p.id}">
+      <td data-label="${esc(d.cols[0])}"><div class="product-name-cell">${esc(p.title)}</div>${badge}${p.description ? `<div class="product-slug-cell">${esc(p.description)}</div>` : ''}</td>
+      <td data-label="${esc(d.cols[1])}" style="font-size:.82rem">${esc(promoTypeLabel(p))}</td>
+      <td data-label="${esc(d.cols[2])}" style="font-size:.82rem">${esc(targets)}</td>
+      <td data-label="${esc(d.cols[3])}" style="font-size:.78rem;color:var(--muted)">${promoWindow(p)}</td>
+      <td data-label="${esc(d.cols[4])}" style="font-weight:700">${p.priority || 0}</td>
+      <td data-label="${esc(d.cols[5])}"><span class="promo-status ${st.cls}">${esc(st.txt)}</span></td>
+      <td data-label="${esc(d.cols[6])}">
+        <button class="toggle-btn ${p.isActive ? 'toggle-active' : 'toggle-inactive'}" onclick="togglePromotionActive(${p.id}, ${p.isActive})">
+          ${p.isActive ? esc(d.on) : esc(d.off)}
+        </button>
+      </td>
+      <td data-label="${esc(d.cols[7])}">
+        <div class="actions-cell">
+          <button class="action-btn edit-btn" onclick="editPromotion(${p.id})">${esc(d.edit)}</button>
+          <button class="action-btn del-btn" onclick="confirmDeletePromotion(${p.id})">${esc(d.del)}</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function togglePromotionActive(id, isActive) {
+  try {
+    const res = await fetch(`${API}/promotions/admin/${id}/toggle`, {
+      method: 'PATCH', ...authHeaders(), body: JSON.stringify({ isActive: !isActive }),
+    });
+    if (!res.ok) throw new Error();
+    loadPromotions();
+  } catch { showToast(pk().saveFail, 'error'); }
+}
+
+function confirmDeletePromotion(id) {
+  const p = promotions.find((x) => x.id === id);
+  document.getElementById('confirmTitle').textContent = pk().delTitle;
+  document.getElementById('confirmMsg').textContent = pk().delMsg.replace('{name}', (p && p.title) || '');
+  pendingDeleteFn = () => doDeletePromotion(id);
+  document.getElementById('confirmOkBtn').onclick = () => { pendingDeleteFn && pendingDeleteFn(); closeConfirm(); };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+async function doDeletePromotion(id) {
+  try {
+    const res = await fetch(`${API}/promotions/admin/${id}`, { method: 'DELETE', ...authHeaders() });
+    if (!res.ok) throw new Error();
+    showToast(pk().deleted, 'success');
+    loadPromotions();
+  } catch { showToast(pk().saveFail, 'error'); }
+}
+
+// ----- WIZARD -----
+function pmResetForm() {
+  document.getElementById('promotionForm').reset();
+  pmField('pmId').value = '';
+  pmField('pmOfferType').value = '';
+  pmSelected = new Set();
+  document.querySelectorAll('.promo-type-card').forEach((c) => c.classList.remove('selected'));
+  onAppliesChange();
+  onStartModeChange();
+}
+
+function openPromotionModal(id = null) {
+  pmResetForm();
+  document.getElementById('promotionModalTitle').textContent = id ? pk().modalEdit : pk().modalAdd;
+  loadPromoProducts();
+  if (id) fillPromotionForm(id);
+  applyPromoI18n();
+  pmGoStep(1);
+  document.getElementById('promotionOverlay').classList.add('open');
+}
+
+function closePromotionModal() {
+  document.getElementById('promotionOverlay').classList.remove('open');
+}
+
+function selectPromoType(el) {
+  document.querySelectorAll('.promo-type-card').forEach((c) => c.classList.remove('selected'));
+  el.classList.add('selected');
+  pmField('pmOfferType').value = el.dataset.type;
+  if (el.dataset.type === 'bogo') {
+    if (el.dataset.buy !== undefined && el.dataset.buy !== '') pmField('pmBuyQty').value = el.dataset.buy;
+    if (el.dataset.get !== undefined && el.dataset.get !== '') pmField('pmGetQty').value = el.dataset.get;
+  }
+  updatePromoFieldVisibility();
+}
+
+function updatePromoFieldVisibility() {
+  const type = pmField('pmOfferType').value;
+  document.querySelectorAll('.promo-field').forEach((el) => {
+    el.style.display = el.getAttribute('data-for') === type ? '' : 'none';
+  });
+}
+
+function onAppliesChange() {
+  const val = document.querySelector('input[name="pmApplies"]:checked')?.value || 'all';
+  document.getElementById('pmProductPickWrap').style.display = val === 'products' ? '' : 'none';
+}
+
+function onStartModeChange() {
+  const val = document.querySelector('input[name="pmStartMode"]:checked')?.value || 'now';
+  document.getElementById('pmStartWrap').style.display = val === 'scheduled' ? '' : 'none';
+}
+
+async function loadPromoProducts() {
+  if (!pmProductsLoaded && (!allProducts || !allProducts.length)) {
+    try {
+      const res = await fetch(`${API}/products/admin/all`, authHeaders());
+      if (res.ok) { const { data } = await res.json(); allProducts = data || []; }
+    } catch { /* picker will show empty */ }
+  }
+  pmProductsLoaded = true;
+  renderPromoProductList();
+}
+
+function renderPromoProductList() {
+  const wrap = document.getElementById('pmProductList');
+  if (!wrap) return;
+  const filter = (pmField('pmProductSearch').value || '').toLowerCase().trim();
+  const list = (allProducts || []).filter((p) => !filter || p.name.toLowerCase().includes(filter) || (p.slug || '').includes(filter));
+  if (!list.length) {
+    wrap.innerHTML = `<div class="promo-product-empty">${esc(adminLang === 'ar' ? 'لا توجد منتجات' : 'No products')}</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map((p) => `
+    <label class="promo-product-item">
+      <input type="checkbox" value="${p.id}" ${pmSelected.has(p.id) ? 'checked' : ''} onchange="togglePromoProduct(${p.id}, this.checked)"/>
+      <img src="${esc(p.imageUrl || '/assets/images/product-1.jpg')}" alt="" onerror="this.onerror=null;this.src='/assets/images/product-1.jpg'"/>
+      <span class="ppi-name">${esc(p.name)}</span>
+      <span class="ppi-price">${(p.price || 0).toLocaleString(currentNumberLocale())} EGP</span>
+    </label>`).join('');
+}
+
+function filterPromoProducts() { renderPromoProductList(); }
+
+function togglePromoProduct(id, checked) {
+  if (checked) pmSelected.add(id); else pmSelected.delete(id);
+}
+
+function collectPromoData() {
+  const v = (id) => pmField(id).value;
+  const numOrNull = (s) => (s === '' || s == null ? null : Number(s));
+  const type = pmField('pmOfferType').value;
+  const applies = document.querySelector('input[name="pmApplies"]:checked')?.value || 'all';
+  const startMode = document.querySelector('input[name="pmStartMode"]:checked')?.value || 'now';
+  const data = {
+    title: v('pmTitle').trim(),
+    description: v('pmDesc').trim(),
+    badgeText: v('pmBadge').trim(),
+    offerType: type,
+    appliesTo: applies,
+    productIds: applies === 'products' ? Array.from(pmSelected) : [],
+    priority: numOrNull(v('pmPriority')) ?? 0,
+    allowStacking: pmField('pmAllowStacking').checked,
+    availableToAll: pmField('pmAvailableAll').checked,
+    maxUsesPerOrder: numOrNull(v('pmMaxUses')),
+    isActive: pmField('pmIsActive').checked,
+    startsAt: startMode === 'scheduled' ? (v('pmStartsAt') || null) : null,
+    endsAt: v('pmEndsAt') || null,
+  };
+  if (type === 'bogo') {
+    data.buyQty = numOrNull(v('pmBuyQty'));
+    data.getQty = numOrNull(v('pmGetQty'));
+    data.maxFreeQty = numOrNull(v('pmMaxFree'));
+  } else if (type === 'percent') data.discountPercent = numOrNull(v('pmPercent'));
+  else if (type === 'fixed') data.discountAmount = numOrNull(v('pmAmount'));
+  else if (type === 'special_price') data.specialPrice = numOrNull(v('pmSpecialPrice'));
+  const idVal = v('pmId');
+  if (idVal) data.id = Number(idVal);
+  return data;
+}
+
+// Client-side gate for a wizard step; the server re-validates everything on save.
+function validatePromoStep(step) {
+  const d = pk();
+  const data = collectPromoData();
+  if (step === 1) {
+    if (!data.offerType) return d.errType;
+  } else if (step === 2) {
+    if (data.appliesTo === 'products' && !pmSelected.size) return d.errProducts;
+  } else if (step === 3) {
+    if (!data.title) return d.errTitle;
+    if (data.offerType === 'bogo' && (!(data.buyQty >= 1) || !(data.getQty >= 1))) return d.errBogo;
+    if (data.offerType === 'percent' && !(data.discountPercent > 0 && data.discountPercent <= 100)) return d.errPercent;
+    if (data.offerType === 'fixed' && !(data.discountAmount > 0)) return d.errAmount;
+    if (data.offerType === 'special_price' && !(data.specialPrice >= 0)) return d.errSpecial;
+  } else if (step === 4) {
+    const startMode = document.querySelector('input[name="pmStartMode"]:checked')?.value || 'now';
+    if (startMode === 'scheduled' && !data.startsAt) return d.errStart;
+    if (data.endsAt) {
+      const endMs = Date.parse(data.endsAt);
+      if (data.startsAt && endMs <= Date.parse(data.startsAt)) return d.errEndOrder;
+      if (!data.startsAt && endMs <= Date.now()) return d.errEndPast;
+    }
+  }
+  return null;
+}
+
+function pmGoStep(step) {
+  pmStep = Math.max(1, Math.min(5, step));
+  document.querySelectorAll('.promo-step-dot').forEach((dot) => {
+    const n = Number(dot.getAttribute('data-dot'));
+    dot.classList.toggle('active', n === pmStep);
+    dot.classList.toggle('done', n < pmStep);
+  });
+  document.querySelectorAll('.promo-step').forEach((s) => {
+    s.hidden = Number(s.getAttribute('data-step')) !== pmStep;
+  });
+  if (pmStep === 3) updatePromoFieldVisibility();
+  if (pmStep === 5) renderPromoPreview();
+  document.getElementById('pmBackBtn').style.visibility = pmStep === 1 ? 'hidden' : 'visible';
+  document.getElementById('pmNextBtn').style.display = pmStep === 5 ? 'none' : '';
+  document.getElementById('pmSaveBtn').style.display = pmStep === 5 ? '' : 'none';
+}
+
+function promoStep(dir) {
+  if (dir > 0) {
+    const err = validatePromoStep(pmStep);
+    if (err) { showToast(err, 'error'); return; }
+  }
+  pmGoStep(pmStep + dir);
+}
+
+function renderPromoPreview() {
+  const d = pk();
+  const wrap = document.getElementById('pmPreview');
+  const P = window.STAR_PROMO;
+  const data = collectPromoData();
+  let price = 500;
+  if (data.appliesTo === 'products' && pmSelected.size) {
+    const p = (allProducts || []).find((x) => pmSelected.has(x.id));
+    if (p) price = p.price;
+  }
+  const promo = Object.assign({}, data, { id: 999999, isActive: true, startsAt: null, endsAt: null, appliesTo: 'all', productIds: [] });
+  const isBogo = data.offerType === 'bogo';
+  const badge = P ? P.badgeText(promo, adminLang) : (data.badgeText || 'Sale');
+  const desc = P ? P.offerDescription(promo, adminLang) : data.description;
+  const sampleQty = isBogo ? (Math.max(1, Number(data.buyQty) || 1) + Math.max(1, Number(data.getQty) || 1)) : 2;
+  const line = P ? P.computeLine({ id: 999999, price }, sampleQty, [promo], Date.now())
+    : { originalTotal: price * sampleQty, lineTotal: price * sampleQty, discount: 0, freeQty: 0, saleUnitPrice: price };
+  const cardSale = isBogo ? price : line.saleUnitPrice;
+  const showStrike = !isBogo && cardSale < price;
+  const fmt = (n) => Number(n || 0).toLocaleString(currentNumberLocale());
+  const timerRow = data.endsAt
+    ? `<div class="ppc-timer">⏳ ${esc(d.endsIn)}: ${esc(new Date(data.endsAt).toLocaleString(currentDateLocale()))}</div>` : '';
+  wrap.innerHTML = `
+    <div class="promo-preview-grid">
+      <div class="promo-preview-col">
+        <div class="promo-preview-label">${esc(d.previewTitle)}</div>
+        <div class="promo-preview-card">
+          <div class="ppc-badge">${esc(badge)}</div>
+          <div class="ppc-img"></div>
+          <div class="ppc-name">${esc(data.appliesTo === 'products' && pmSelected.size ? ((allProducts || []).find((x) => pmSelected.has(x.id))?.name || d.sampleProduct) : d.sampleProduct)}</div>
+          <div class="ppc-price-row">
+            <span class="ppc-sale">${fmt(cardSale)} EGP</span>
+            ${showStrike ? `<span class="ppc-old">${fmt(price)} EGP</span>` : ''}
+          </div>
+          ${desc ? `<div class="ppc-desc">${esc(desc)}</div>` : ''}
+          ${timerRow}
+        </div>
+      </div>
+      <div class="promo-preview-col">
+        <div class="promo-preview-label">${esc(d.calcTitle)}</div>
+        <div class="promo-calc">
+          <div class="promo-calc-head">${esc(d.calcAdds.replace('{q}', sampleQty))}</div>
+          <div class="promo-calc-row"><span>${esc(d.original)}</span><b>${fmt(line.originalTotal)} EGP</b></div>
+          <div class="promo-calc-row"><span>${esc(d.discountLbl)}</span><b class="neg">- ${fmt(line.discount)} EGP</b></div>
+          ${line.freeQty > 0 ? `<div class="promo-calc-row"><span>${esc(d.freeLbl)}</span><b class="free">${line.freeQty} 🎁</b></div>` : ''}
+          <div class="promo-calc-row total"><span>${esc(d.totalLbl)}</span><b>${fmt(line.lineTotal)} EGP</b></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function fillPromotionForm(id) {
+  const p = promotions.find((x) => x.id === id);
+  if (!p) return;
+  pmField('pmId').value = p.id;
+  pmField('pmOfferType').value = p.offerType;
+  // Highlight the matching type card (match bogo buy/get where the presets specify them).
+  document.querySelectorAll('.promo-type-card').forEach((c) => {
+    let match = c.dataset.type === p.offerType;
+    if (match && p.offerType === 'bogo' && c.dataset.buy !== '') {
+      match = Number(c.dataset.buy) === Number(p.buyQty) && Number(c.dataset.get) === Number(p.getQty);
+    } else if (match && p.offerType === 'bogo' && c.dataset.buy === '') {
+      // the custom X+Y card only matches when no preset card did
+      match = !(Number(p.buyQty) === 1 && Number(p.getQty) === 1) && !(Number(p.buyQty) === 2 && Number(p.getQty) === 1);
+    }
+    c.classList.toggle('selected', match);
+  });
+  pmField('pmBuyQty').value = p.buyQty ?? '';
+  pmField('pmGetQty').value = p.getQty ?? '';
+  pmField('pmPercent').value = p.discountPercent ?? '';
+  pmField('pmAmount').value = p.discountAmount ?? '';
+  pmField('pmSpecialPrice').value = p.specialPrice ?? '';
+  pmField('pmTitle').value = p.title || '';
+  pmField('pmBadge').value = p.badgeText || '';
+  pmField('pmDesc').value = p.description || '';
+  pmField('pmPriority').value = p.priority ?? 0;
+  pmField('pmMaxUses').value = p.maxUsesPerOrder ?? '';
+  pmField('pmMaxFree').value = p.maxFreeQty ?? '';
+  pmField('pmAllowStacking').checked = !!p.allowStacking;
+  pmField('pmAvailableAll').checked = p.availableToAll !== false;
+  pmField('pmIsActive').checked = p.isActive !== false;
+  // targeting
+  const applies = p.appliesTo === 'products' ? 'products' : 'all';
+  document.querySelectorAll('input[name="pmApplies"]').forEach((r) => { r.checked = r.value === applies; });
+  pmSelected = new Set((p.productIds || []).map(Number));
+  onAppliesChange();
+  renderPromoProductList();
+  // schedule
+  const scheduled = !!p.startsAt;
+  document.querySelectorAll('input[name="pmStartMode"]').forEach((r) => { r.checked = r.value === (scheduled ? 'scheduled' : 'now'); });
+  pmField('pmStartsAt').value = p.startsAt ? toLocalInput(p.startsAt) : '';
+  pmField('pmEndsAt').value = p.endsAt ? toLocalInput(p.endsAt) : '';
+  onStartModeChange();
+  updatePromoFieldVisibility();
+}
+
+// ISO (UTC) -> value for <input type="datetime-local"> in the admin's local time.
+function toLocalInput(iso) {
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+}
+
+function editPromotion(id) { openPromotionModal(id); }
+
+async function savePromotion() {
+  for (let s = 1; s <= 4; s += 1) {
+    const err = validatePromoStep(s);
+    if (err) { showToast(err, 'error'); pmGoStep(s); return; }
+  }
+  const data = collectPromoData();
+  const id = data.id;
+  try {
+    const url = id ? `${API}/promotions/admin/${id}` : `${API}/promotions/admin`;
+    const method = id ? 'PATCH' : 'POST';
+    const res = await fetch(url, { method, ...authHeaders(), body: JSON.stringify(data) });
+    const result = await res.json();
+    if (!res.ok) {
+      const msg = result.errors?.map((e) => e.message).join(', ') || result.message || pk().saveFail;
+      showToast(msg, 'error');
+      return;
+    }
+    showToast(id ? pk().updated : pk().created, 'success');
+    closePromotionModal();
+    loadPromotions();
+  } catch { showToast(pk().saveFail, 'error'); }
+}
+
+// -- PROMO CODES (coupons) + per-product sale labels ----------
+const CODE_I18N = {
+  en: {
+    pageTitle: 'Promo Codes',
+    pageSub: 'Discount codes customers type at checkout. Applied on top of product offers; always re-checked on the server.',
+    cols: ['Code', 'Discount', 'Min order', 'Window', 'Uses', 'Status', 'On', 'Actions'],
+    modalAdd: 'New Promo Code', modalEdit: 'Edit Promo Code',
+    code: 'Code *', type: 'Discount type *', typePercent: 'Percentage (%)', typeFixed: 'Fixed amount (EGP)',
+    valuePercent: 'Percentage (%)', valueFixed: 'Amount (EGP)', minOrder: 'Minimum order (optional)',
+    maxUses: 'Total usage limit (optional)', optional: 'Unlimited', startsAt: 'Starts (optional)', endsAt: 'Ends (optional)',
+    active: 'Active', cancel: 'Cancel', save: 'Save Code',
+    empty: 'No promo codes yet. Create your first code.', ongoing: 'Ongoing', now: 'Now',
+    live: 'Live', paused: 'Paused', scheduledLbl: 'Scheduled', expired: 'Expired', usedUp: 'Used up',
+    on: 'On', off: 'Off', edit: 'Edit', del: 'Delete',
+    created: 'Promo code created.', updated: 'Promo code updated.', deleted: 'Promo code deleted.',
+    saveFail: 'Failed to save the code.', delTitle: 'Delete promo code', delMsg: 'Delete code "{code}"? Past orders keep it.',
+    saleToggle: 'On sale — show a sale price, badge & optional countdown on this product',
+    salePrice: 'Sale price (EGP)', saleEnds: 'Sale ends (optional)',
+  },
+  ar: {
+    pageTitle: 'أكواد الخصم',
+    pageSub: 'أكواد يكتبها العميل عند الدفع. تُطبَّق فوق عروض المنتجات، ويُعاد التحقق منها دائمًا على السيرفر.',
+    cols: ['الكود', 'الخصم', 'أدنى طلب', 'المدة', 'الاستخدام', 'الحالة', 'تشغيل', 'إجراءات'],
+    modalAdd: 'كود خصم جديد', modalEdit: 'تعديل كود الخصم',
+    code: 'الكود *', type: 'نوع الخصم *', typePercent: 'نسبة مئوية (%)', typeFixed: 'قيمة ثابتة (جنيه)',
+    valuePercent: 'النسبة (%)', valueFixed: 'القيمة (جنيه)', minOrder: 'أدنى قيمة للطلب (اختياري)',
+    maxUses: 'حد الاستخدام الكلي (اختياري)', optional: 'غير محدود', startsAt: 'يبدأ (اختياري)', endsAt: 'ينتهي (اختياري)',
+    active: 'مُفعّل', cancel: 'إلغاء', save: 'حفظ الكود',
+    empty: 'لا توجد أكواد بعد. أنشئ أول كود.', ongoing: 'مستمر', now: 'الآن',
+    live: 'يعمل', paused: 'متوقف', scheduledLbl: 'مجدول', expired: 'منتهٍ', usedUp: 'استُهلك',
+    on: 'تشغيل', off: 'إيقاف', edit: 'تعديل', del: 'حذف',
+    created: 'تم إنشاء الكود.', updated: 'تم تحديث الكود.', deleted: 'تم حذف الكود.',
+    saveFail: 'فشل حفظ الكود.', delTitle: 'حذف كود الخصم', delMsg: 'حذف الكود «{code}»؟ الطلبات السابقة تحتفظ به.',
+    saleToggle: 'تخفيض — أظهر سعر عرض وشارة ومؤقّتًا اختياريًا على هذا المنتج',
+    salePrice: 'سعر العرض (جنيه)', saleEnds: 'ينتهي العرض (اختياري)',
+  },
+};
+function ck() { return CODE_I18N[adminLang] || CODE_I18N.en; }
+let promoCodes = [];
+
+function applyCodesI18n() {
+  const d = ck();
+  document.querySelectorAll('#contentPromotions [data-ck], #promoCodeModal [data-ck]').forEach((el) => {
+    const key = el.getAttribute('data-ck');
+    if (d[key] != null) el.textContent = d[key];
+  });
+  document.querySelectorAll('#promoCodeModal [data-ck-ph]').forEach((el) => {
+    const key = el.getAttribute('data-ck-ph');
+    if (d[key] != null) el.placeholder = d[key];
+  });
+  const set = (id, txt) => { const el = document.getElementById(id); if (el && txt != null) el.textContent = txt; };
+  set('codePageTitle', d.pageTitle);
+  set('codePageSub', d.pageSub);
+  const heads = document.querySelectorAll('#codeTableHead th');
+  if (heads.length === d.cols.length) d.cols.forEach((c, i) => { heads[i].textContent = c; });
+  set('pOnSaleLabel', d.saleToggle);
+  set('pSalePriceLabel', d.salePrice);
+  set('pSaleEndsLabel', d.saleEnds);
+  onPcTypeChange();
+}
+
+function onPcTypeChange() {
+  const sel = document.getElementById('pcType');
+  const lbl = document.getElementById('pcValueLabel');
+  if (sel && lbl) lbl.textContent = sel.value === 'percent' ? ck().valuePercent : ck().valueFixed;
+}
+
+async function loadPromoCodes() {
+  applyCodesI18n();
+  const body = document.getElementById('promoCodesBody');
+  if (body) body.innerHTML = `<tr class="loading-row"><td colspan="8">${esc(t('common.loading'))}</td></tr>`;
+  try {
+    const res = await fetch(`${API}/promo-codes/admin`, authHeaders());
+    if (!res.ok) { showBackendError('promoCodesBody', 8); return; }
+    const { data } = await res.json();
+    promoCodes = Array.isArray(data) ? data : [];
+    renderPromoCodesTable();
+  } catch { showBackendError('promoCodesBody', 8); }
+}
+
+function codeStatus(p) {
+  const d = ck();
+  const now = Date.now();
+  if (!p.isActive) return { cls: 'toggle-inactive', txt: d.paused };
+  if (p.maxUses != null && p.usedCount >= p.maxUses) return { cls: 'toggle-inactive', txt: d.usedUp };
+  if (p.startsAt && Date.parse(p.startsAt) > now) return { cls: 'toggle-scheduled', txt: d.scheduledLbl };
+  if (p.endsAt && Date.parse(p.endsAt) <= now) return { cls: 'toggle-inactive', txt: d.expired };
+  return { cls: 'toggle-active', txt: d.live };
+}
+
+function codeDiscountLabel(p) {
+  return p.discountType === 'percent'
+    ? `${p.discountValue}%`
+    : `${Number(p.discountValue).toLocaleString(currentNumberLocale())} EGP`;
+}
+
+function codeWindow(p) {
+  const d = ck();
+  const fmt = (iso) => new Date(iso).toLocaleString(currentDateLocale(), { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const start = p.startsAt ? fmt(p.startsAt) : d.now;
+  const end = p.endsAt ? fmt(p.endsAt) : d.ongoing;
+  return `${esc(start)} → ${esc(end)}`;
+}
+
+function renderPromoCodesTable() {
+  const tbody = document.getElementById('promoCodesBody');
+  const d = ck();
+  if (!promoCodes.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">#</div><p>${esc(d.empty)}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = promoCodes.map((p) => {
+    const st = codeStatus(p);
+    const uses = `${p.usedCount}${p.maxUses != null ? ' / ' + p.maxUses : ''}`;
+    return `
+    <tr id="coderow-${p.id}">
+      <td data-label="${esc(d.cols[0])}"><span class="code-chip">${esc(p.code)}</span></td>
+      <td data-label="${esc(d.cols[1])}" style="font-weight:700">${esc(codeDiscountLabel(p))}</td>
+      <td data-label="${esc(d.cols[2])}">${p.minOrderSubtotal > 0 ? esc(p.minOrderSubtotal.toLocaleString(currentNumberLocale()) + ' EGP') : '—'}</td>
+      <td data-label="${esc(d.cols[3])}" style="font-size:.78rem;color:var(--muted)">${codeWindow(p)}</td>
+      <td data-label="${esc(d.cols[4])}">${esc(uses)}</td>
+      <td data-label="${esc(d.cols[5])}"><span class="promo-status ${st.cls}">${esc(st.txt)}</span></td>
+      <td data-label="${esc(d.cols[6])}">
+        <button class="toggle-btn ${p.isActive ? 'toggle-active' : 'toggle-inactive'}" onclick="togglePromoCodeActive(${p.id}, ${p.isActive})">
+          ${p.isActive ? esc(d.on) : esc(d.off)}
+        </button>
+      </td>
+      <td data-label="${esc(d.cols[7])}">
+        <div class="actions-cell">
+          <button class="action-btn edit-btn" onclick="editPromoCode(${p.id})">${esc(d.edit)}</button>
+          <button class="action-btn del-btn" onclick="confirmDeletePromoCode(${p.id})">${esc(d.del)}</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openPromoCodeModal(id = null) {
+  document.getElementById('promoCodeForm').reset();
+  document.getElementById('pcId').value = '';
+  document.getElementById('promoCodeModalTitle').textContent = id ? ck().modalEdit : ck().modalAdd;
+  if (id) fillPromoCodeForm(id);
+  applyCodesI18n();
+  document.getElementById('promoCodeOverlay').classList.add('open');
+}
+
+function closePromoCodeModal() {
+  document.getElementById('promoCodeOverlay').classList.remove('open');
+}
+
+function fillPromoCodeForm(id) {
+  const p = promoCodes.find((x) => x.id === id);
+  if (!p) return;
+  document.getElementById('pcId').value = p.id;
+  document.getElementById('pcCode').value = p.code;
+  document.getElementById('pcType').value = p.discountType;
+  document.getElementById('pcValue').value = p.discountValue;
+  document.getElementById('pcMinOrder').value = p.minOrderSubtotal || '';
+  document.getElementById('pcMaxUses').value = p.maxUses ?? '';
+  document.getElementById('pcStartsAt').value = p.startsAt ? toLocalInput(p.startsAt) : '';
+  document.getElementById('pcEndsAt').value = p.endsAt ? toLocalInput(p.endsAt) : '';
+  document.getElementById('pcIsActive').checked = p.isActive !== false;
+  onPcTypeChange();
+}
+
+function editPromoCode(id) { openPromoCodeModal(id); }
+
+async function savePromoCode() {
+  const v = (id) => document.getElementById(id).value;
+  const numOrNull = (s) => (s === '' || s == null ? null : Number(s));
+  const data = {
+    code: v('pcCode').trim().toUpperCase(),
+    discountType: v('pcType'),
+    discountValue: numOrNull(v('pcValue')),
+    minOrderSubtotal: numOrNull(v('pcMinOrder')) ?? 0,
+    maxUses: numOrNull(v('pcMaxUses')),
+    startsAt: v('pcStartsAt') || null,
+    endsAt: v('pcEndsAt') || null,
+    isActive: document.getElementById('pcIsActive').checked,
+  };
+  const id = v('pcId');
+  try {
+    const url = id ? `${API}/promo-codes/admin/${id}` : `${API}/promo-codes/admin`;
+    const method = id ? 'PATCH' : 'POST';
+    const res = await fetch(url, { method, ...authHeaders(), body: JSON.stringify(data) });
+    const result = await res.json();
+    if (!res.ok) {
+      showToast(result.errors?.map((e) => e.message).join(', ') || result.message || ck().saveFail, 'error');
+      return;
+    }
+    showToast(id ? ck().updated : ck().created, 'success');
+    closePromoCodeModal();
+    loadPromoCodes();
+  } catch { showToast(ck().saveFail, 'error'); }
+}
+
+async function togglePromoCodeActive(id, isActive) {
+  try {
+    const res = await fetch(`${API}/promo-codes/admin/${id}/toggle`, {
+      method: 'PATCH', ...authHeaders(), body: JSON.stringify({ isActive: !isActive }),
+    });
+    if (!res.ok) throw new Error();
+    loadPromoCodes();
+  } catch { showToast(ck().saveFail, 'error'); }
+}
+
+function confirmDeletePromoCode(id) {
+  const p = promoCodes.find((x) => x.id === id);
+  document.getElementById('confirmTitle').textContent = ck().delTitle;
+  document.getElementById('confirmMsg').textContent = ck().delMsg.replace('{code}', (p && p.code) || '');
+  pendingDeleteFn = () => doDeletePromoCode(id);
+  document.getElementById('confirmOkBtn').onclick = () => { pendingDeleteFn && pendingDeleteFn(); closeConfirm(); };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+async function doDeletePromoCode(id) {
+  try {
+    const res = await fetch(`${API}/promo-codes/admin/${id}`, { method: 'DELETE', ...authHeaders() });
+    if (!res.ok) throw new Error();
+    showToast(ck().deleted, 'success');
+    loadPromoCodes();
+  } catch { showToast(ck().saveFail, 'error'); }
+}
+
+// -- SITE CONFIG -----------------------------------------------
+function adminWhatsappNumber() {
+  return String(siteConfig.storefront?.whatsappNumber || window.STAR_CONFIG?.WHATSAPP || '201000000000').replace(/\D/g, '');
+}
+
+// Normalize a stored phone into a WhatsApp-ready international number.
+// Orders are placed with Egyptian local numbers (01XXXXXXXXX); WhatsApp needs the
+// international form (20XXXXXXXXX) with no leading zero or plus sign.
+function toWhatsAppNumber(raw) {
+  let d = String(raw || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.startsWith('00')) d = d.slice(2);                          // 00<country> -> <country>
+  if (d.length === 11 && d.startsWith('01')) d = '20' + d.slice(1); // 01XXXXXXXXX -> 201XXXXXXXXX
+  else if (d.length === 10 && d.startsWith('1')) d = '20' + d;      // 1XXXXXXXXX  -> 201XXXXXXXXX
+  return d;
+}
+
+// Open a WhatsApp chat with the customer who placed this order, using that order's own phone.
+// Never uses a fixed/admin number. Shows a toast (no crash) when the order has no phone.
+function openOrderWhatsApp(orderId, ev) {
+  if (ev) ev.preventDefault();
+  const order = (currentOrders || []).find(o => o.id === orderId);
+  const digits = toWhatsAppNumber(order && order.phone);
+  if (!digits) {
+    showToast(t('messages.noCustomerPhone'), 'error');
+    return;
+  }
+  const msg = t('messages.waOrderGreeting', { name: (order && order.fullName) || '', id: orderId });
+  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+}
+
+function applyAdminBranding() {
+  const logoUrl = siteConfig.storefront?.logoUrl || 'logo.png';
+  ['loginLogoImg', 'topbarLogoImg'].forEach((id) => {
+    const img = document.getElementById(id);
+    if (img) img.src = logoUrl;
+  });
+}
+
+function cloneTranslationsMap(value) {
+  return {
+    en: { ...(value?.en || {}) },
+    ar: { ...(value?.ar || {}) },
+  };
+}
+
+function cloneContentBlocks(value) {
+  return JSON.parse(JSON.stringify(value || DEFAULT_CONTENT_BLOCKS || {}));
+}
+
+function getBlockValue(path) {
+  return String(path || '')
+    .split('.')
+    .reduce((acc, part) => (acc == null ? acc : acc[part]), siteConfig.contentBlocks);
+}
+
+function setBlockValue(path, value) {
+  const parts = String(path || '').split('.');
+  let target = siteConfig.contentBlocks;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const key = parts[i];
+    if (target[key] == null) {
+      target[key] = /^\d+$/.test(parts[i + 1]) ? [] : {};
+    }
+    target = target[key];
+  }
+  target[parts[parts.length - 1]] = value;
+}
+
+function updateContentBlockField(path, value) {
+  setBlockValue(path, value);
+  if (selectedMediaKey && path === `mediaImages.${selectedMediaKey}.imageUrl`) {
+    const selectedInput = document.getElementById('selectedMediaUrl');
+    if (selectedInput && selectedInput.value !== value) selectedInput.value = value;
+    syncImagePreview('selectedMediaUrl', 'selectedMediaPreviewImg', 'selectedMediaPreviewEmpty');
+  }
+}
+
+function updateContentBlockCheckbox(path, checked) {
+  setBlockValue(path, checked);
+}
+
+function addReviewBlock() {
+  siteConfig.contentBlocks.reviews.push({
+    avatar: 'N',
+    stars: 5,
+    featured: false,
+    name: { en: '', ar: '' },
+    role: { en: '', ar: '' },
+    text: { en: '', ar: '' },
+  });
+  renderContentBlocksEditor();
+}
+
+function removeReviewBlock(index) {
+  siteConfig.contentBlocks.reviews.splice(index, 1);
+  renderContentBlocksEditor();
+}
+
+function addFaqBlock() {
+  siteConfig.contentBlocks.faqs.push({
+    question: { en: '', ar: '' },
+    answer: { en: '', ar: '' },
+  });
+  renderContentBlocksEditor();
+}
+
+function removeFaqBlock(index) {
+  siteConfig.contentBlocks.faqs.splice(index, 1);
+  renderContentBlocksEditor();
+}
+
+function addWarrantyBlock() {
+  siteConfig.contentBlocks.warranty.push({
+    icon: 'Shield',
+    title: { en: '', ar: '' },
+    description: { en: '', ar: '' },
+  });
+  renderContentBlocksEditor();
+}
+
+function removeWarrantyBlock(index) {
+  siteConfig.contentBlocks.warranty.splice(index, 1);
+  renderContentBlocksEditor();
+}
+
+function addGalleryImage(groupKey) {
+  siteConfig.contentBlocks.gallery[groupKey].items.push({
+    imageUrl: '',
+    caption: { en: '', ar: '' },
+  });
+  renderContentBlocksEditor();
+}
+
+function removeGalleryImage(groupKey, index) {
+  siteConfig.contentBlocks.gallery[groupKey].items.splice(index, 1);
+  renderContentBlocksEditor();
+}
+
+function mediaImageEditor(mediaKey, item = {}) {
+  const inputId = `media-${mediaKey}-image`;
+  const fileId = `media-${mediaKey}-file`;
+  const previewImgId = `media-${mediaKey}-preview-img`;
+  const previewEmptyId = `media-${mediaKey}-preview-empty`;
+  const statusId = `media-${mediaKey}-status`;
+
+  return `
+    <article class="cms-gallery-item" id="media-editor-${esc(mediaKey)}">
+      <div class="cms-structured-card-head">
+        <div class="cms-structured-card-title">${esc(item.label || mediaKey)}</div>
+      </div>
+      <div class="cms-upload-field">
+        <input type="text" id="${esc(inputId)}" value="${esc(item.imageUrl || '')}" oninput="updateContentBlockField('mediaImages.${mediaKey}.imageUrl', this.value); syncImagePreview('${inputId}', '${previewImgId}', '${previewEmptyId}'); applyMediaDraftToPreview('${mediaKey}', this.value)"/>
+        <button class="secondary-btn" type="button" onclick="triggerImageUpload('${fileId}')">Upload</button>
+        <input type="file" id="${esc(fileId)}" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" data-target-input="${esc(inputId)}" data-preview-img="${esc(previewImgId)}" data-preview-empty="${esc(previewEmptyId)}" data-status="${esc(statusId)}" data-path="mediaImages.${mediaKey}.imageUrl" onchange="handleImageUpload(event)" hidden/>
+      </div>
+      <div class="cms-upload-status" id="${esc(statusId)}">PNG, JPG, WEBP, or GIF up to 5 MB.</div>
+      <div class="cms-image-preview">
+        <div class="cms-image-preview-empty" id="${esc(previewEmptyId)}">${item.imageUrl ? 'Preview loading...' : 'No image selected yet.'}</div>
+        <img id="${esc(previewImgId)}" src="${esc(item.imageUrl || '')}" alt="${esc(item.label || mediaKey)} preview" style="${item.imageUrl ? '' : 'display:none'}"/>
+      </div>
+    </article>
+  `;
+}
+
+function structuredLocaleFields(pathBase, value = {}, fieldType = 'textarea') {
+  const renderField = (lang, label) => {
+    const fieldId = `${pathBase.replace(/\./g, '-')}-${lang}`;
+    const currentValue = value?.[lang] || '';
+    if (fieldType === 'input') {
+      return `
+        <div class="cms-locale-card">
+          <label class="cms-locale-label" for="${esc(fieldId)}">${label}</label>
+          <input type="text" id="${esc(fieldId)}" value="${esc(currentValue)}" oninput="updateContentBlockField('${pathBase}.${lang}', this.value)"/>
+        </div>
+      `;
+    }
+    return `
+      <div class="cms-locale-card">
+        <label class="cms-locale-label" for="${esc(fieldId)}">${label}</label>
+        <textarea class="content-textarea" id="${esc(fieldId)}" oninput="updateContentBlockField('${pathBase}.${lang}', this.value)">${esc(currentValue)}</textarea>
+      </div>
+    `;
+  };
+
+  return `
+    <div class="cms-mini-grid">
+      ${renderField('en', 'English')}
+      ${renderField('ar', 'Arabic')}
+    </div>
+  `;
+}
+
+function renderContentBlocksEditor() {
+  const body = document.getElementById('contentBlocksBody');
+  const blocks = siteConfig.contentBlocks || cloneContentBlocks(DEFAULT_CONTENT_BLOCKS);
+  const gallery = blocks.gallery || {};
+  const mediaImages = blocks.mediaImages || {};
+
+  body.innerHTML = `
+    <section class="cms-structured-group">
+      <div class="cms-structured-head">
+        <div>
+          <h4>Page Images</h4>
+          <p>Edit fixed storefront images like the bundle hero visual, thumbnails, and page logos.</p>
+        </div>
+      </div>
+      <div class="cms-gallery-items">
+        ${Object.entries(mediaImages).map(([mediaKey, item]) => mediaImageEditor(mediaKey, item)).join('')}
+      </div>
+    </section>
+
+    <section class="cms-structured-group">
+      <div class="cms-structured-head">
+        <div>
+          <h4>Reviews</h4>
+          <p>Add, remove, and rewrite customer reviews exactly as they appear on the storefront.</p>
+        </div>
+        <button class="secondary-btn" type="button" onclick="addReviewBlock()">Add Review</button>
+      </div>
+      <div class="cms-structured-stack">
+        ${(blocks.reviews || []).map((review, index) => `
+          <article class="cms-structured-card">
+            <div class="cms-structured-card-head">
+              <div class="cms-structured-card-title">Review ${index + 1}</div>
+              <button class="action-btn del-btn" type="button" onclick="removeReviewBlock(${index})">Remove</button>
+            </div>
+            <div class="cms-mini-grid">
+              <div class="cms-locale-card">
+                <label class="cms-locale-label">Avatar Letter</label>
+                <input type="text" value="${esc(review.avatar || '')}" maxlength="1" oninput="updateContentBlockField('reviews.${index}.avatar', this.value)"/>
+              </div>
+              <div class="cms-locale-card">
+                <label class="cms-locale-label">Stars</label>
+                <input type="number" min="1" max="5" value="${Number(review.stars || 5)}" oninput="updateContentBlockField('reviews.${index}.stars', Number(this.value || 5))"/>
+              </div>
+            </div>
+            <div class="cms-locale-card">
+              <label class="cms-locale-label"><input type="checkbox" ${review.featured ? 'checked' : ''} onchange="updateContentBlockCheckbox('reviews.${index}.featured', this.checked)"/> Featured card</label>
+            </div>
+            ${structuredLocaleFields(`reviews.${index}.name`, review.name, 'input')}
+            ${structuredLocaleFields(`reviews.${index}.role`, review.role, 'input')}
+            ${structuredLocaleFields(`reviews.${index}.text`, review.text, 'textarea')}
+          </article>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="cms-structured-group">
+      <div class="cms-structured-head">
+        <div>
+          <h4>FAQ</h4>
+          <p>Control every question and answer in the FAQ section.</p>
+        </div>
+        <button class="secondary-btn" type="button" onclick="addFaqBlock()">Add FAQ</button>
+      </div>
+      <div class="cms-structured-stack">
+        ${(blocks.faqs || []).map((faq, index) => `
+          <article class="cms-structured-card">
+            <div class="cms-structured-card-head">
+              <div class="cms-structured-card-title">FAQ ${index + 1}</div>
+              <button class="action-btn del-btn" type="button" onclick="removeFaqBlock(${index})">Remove</button>
+            </div>
+            ${structuredLocaleFields(`faqs.${index}.question`, faq.question, 'input')}
+            ${structuredLocaleFields(`faqs.${index}.answer`, faq.answer, 'textarea')}
+          </article>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="cms-structured-group">
+      <div class="cms-structured-head">
+        <div>
+          <h4>Warranty Cards</h4>
+          <p>Edit the support, shipping, and guarantee cards under the FAQ area.</p>
+        </div>
+        <button class="secondary-btn" type="button" onclick="addWarrantyBlock()">Add Card</button>
+      </div>
+      <div class="cms-structured-stack">
+        ${(blocks.warranty || []).map((item, index) => `
+          <article class="cms-structured-card">
+            <div class="cms-structured-card-head">
+              <div class="cms-structured-card-title">Card ${index + 1}</div>
+              <button class="action-btn del-btn" type="button" onclick="removeWarrantyBlock(${index})">Remove</button>
+            </div>
+            <div class="cms-locale-card">
+              <label class="cms-locale-label">Icon Type</label>
+              <select onchange="updateContentBlockField('warranty.${index}.icon', this.value)">
+                <option value="Shield" ${item.icon === 'Shield' ? 'selected' : ''}>Shield</option>
+                <option value="Truck" ${item.icon === 'Truck' ? 'selected' : ''}>Truck</option>
+                <option value="Phone" ${item.icon === 'Phone' ? 'selected' : ''}>Phone</option>
+              </select>
+            </div>
+            ${structuredLocaleFields(`warranty.${index}.title`, item.title, 'input')}
+            ${structuredLocaleFields(`warranty.${index}.description`, item.description, 'textarea')}
+          </article>
+        `).join('')}
+      </div>
+    </section>
+
+    <section class="cms-structured-group">
+      <div class="cms-structured-head">
+        <div>
+          <h4>Gallery</h4>
+          <p>Control gallery tabs and upload every gallery image directly from the dashboard.</p>
+        </div>
+      </div>
+      <div class="cms-structured-stack">
+        ${Object.entries(gallery).map(([groupKey, group]) => `
+          <article class="cms-gallery-block">
+            <div class="cms-structured-card-head">
+              <div class="cms-structured-card-title">${esc(groupKey.charAt(0).toUpperCase() + groupKey.slice(1))} Gallery</div>
+              <button class="secondary-btn" type="button" onclick="addGalleryImage('${groupKey}')">Add Image</button>
+            </div>
+            ${structuredLocaleFields(`gallery.${groupKey}.label`, group.label, 'input')}
+            <div class="cms-gallery-items">
+              ${(group.items || []).map((item, index) => {
+                const inputId = `gallery-${groupKey}-${index}-image`;
+                const fileId = `gallery-${groupKey}-${index}-file`;
+                const previewImgId = `gallery-${groupKey}-${index}-preview-img`;
+                const previewEmptyId = `gallery-${groupKey}-${index}-preview-empty`;
+                const statusId = `gallery-${groupKey}-${index}-status`;
+                return `
+                  <div class="cms-gallery-item">
+                    <div class="cms-structured-card-head">
+                      <div class="cms-structured-card-title">Image ${index + 1}</div>
+                      <button class="action-btn del-btn" type="button" onclick="removeGalleryImage('${groupKey}', ${index})">Remove</button>
+                    </div>
+                    <div class="cms-upload-field">
+                      <input type="text" id="${esc(inputId)}" value="${esc(item.imageUrl || '')}" oninput="updateContentBlockField('gallery.${groupKey}.items.${index}.imageUrl', this.value); syncImagePreview('${inputId}', '${previewImgId}', '${previewEmptyId}')"/>
+                      <button class="secondary-btn" type="button" onclick="triggerImageUpload('${fileId}')">Upload</button>
+                      <input type="file" id="${esc(fileId)}" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" data-target-input="${esc(inputId)}" data-preview-img="${esc(previewImgId)}" data-preview-empty="${esc(previewEmptyId)}" data-status="${esc(statusId)}" data-path="gallery.${groupKey}.items.${index}.imageUrl" onchange="handleImageUpload(event)" hidden/>
+                    </div>
+                    <div class="cms-upload-status" id="${esc(statusId)}">PNG, JPG, WEBP, or GIF up to 5 MB.</div>
+                    <div class="cms-image-preview">
+                      <div class="cms-image-preview-empty" id="${esc(previewEmptyId)}">${item.imageUrl ? 'Preview loading...' : 'No image selected yet.'}</div>
+                      <img id="${esc(previewImgId)}" src="${esc(item.imageUrl || '')}" alt="Gallery preview" style="${item.imageUrl ? '' : 'display:none'}"/>
+                    </div>
+                    ${structuredLocaleFields(`gallery.${groupKey}.items.${index}.caption`, item.caption, 'input')}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </article>
+        `).join('')}
+      </div>
+    </section>
+  `;
+
+  document.querySelectorAll('[id$="-preview-img"]').forEach((img) => {
+    const base = img.id.replace(/-preview-img$/, '');
+    const inputId = `${base}-image`;
+    const emptyId = `${base}-preview-empty`;
+    if (document.getElementById(inputId) && document.getElementById(emptyId)) {
+      syncImagePreview(inputId, img.id, emptyId);
+    }
+  });
+}
+
+function fillStorefrontForm() {
+  const sf = siteConfig.storefront || {};
+  const mapping = {
+    sfSiteName: 'siteName',
+    sfLogoUrl: 'logoUrl',
+    sfMetaTitle: 'metaTitle',
+    sfMetaDescription: 'metaDescription',
+    sfWhatsappNumber: 'whatsappNumber',
+    sfSupportPhone: 'supportPhone',
+    sfFacebookUrl: 'facebookUrl',
+    sfInstagramUrl: 'instagramUrl',
+    sfTiktokUrl: 'tiktokUrl',
+    sfWhatsappMessage: 'whatsappDefaultMessage',
+    sfHeroOrders: 'heroOrdersDelivered',
+    sfHeroRating: 'heroRating',
+    sfHeroCod: 'heroCodPercent',
+    sfCurrencyCode: 'currencyCode',
+  };
+
+  Object.entries(mapping).forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = sf[key] || '';
+  });
+
+  resetUploadStatus('sfLogoUploadStatus');
+  syncImagePreview('sfLogoUrl', 'sfLogoPreviewImg', 'sfLogoPreviewEmpty');
+}
+
+function contentGroupKey(rawKey) {
+  const prefix = String(rawKey || '').split('_')[0].replace(/[0-9]+$/g, '');
+  return prefix || 'other';
+}
+
+function contentGroupLabel(groupKey) {
+  const labels = {
+    add: t('content.groups.add'),
+    nav: t('content.groups.nav'),
+    hero: t('content.groups.hero'),
+    bundle: t('content.groups.bundle'),
+    why: t('content.groups.why'),
+    benefit: t('content.groups.benefit'),
+    products: t('content.groups.products'),
+    features: t('content.groups.features'),
+    feat: t('content.groups.feat'),
+    gallery: t('content.groups.gallery'),
+    reviews: t('content.groups.reviews'),
+    review: t('content.groups.review'),
+    order: t('content.groups.order'),
+    cart: t('content.groups.cart'),
+    label: t('content.groups.label'),
+    placeholder: t('content.groups.placeholder'),
+    trust: t('content.groups.trust'),
+    checkout: t('content.groups.checkout'),
+    success: t('content.groups.success'),
+    faq: t('content.groups.faq'),
+    warranty: t('content.groups.warranty'),
+    cable: t('content.groups.cable'),
+    footer: t('content.groups.footer'),
+    sticky: t('content.groups.sticky'),
+    wa: t('content.groups.wa'),
+    upsell: t('content.groups.upsell'),
+    toast: t('content.groups.toast'),
+    cat: t('content.groups.cat'),
+    scroll: t('content.groups.scroll'),
+  };
+  return labels[groupKey] || groupKey.charAt(0).toUpperCase() + groupKey.slice(1);
+}
+
+function buildContentGroups(keys) {
+  const preferredOrder = [
+    'nav', 'hero', 'bundle', 'why', 'benefit', 'products', 'features', 'feat', 'gallery',
+    'reviews', 'review', 'order', 'cart', 'add', 'label', 'placeholder', 'trust', 'checkout',
+    'success', 'faq', 'warranty', 'footer', 'sticky', 'wa', 'upsell', 'toast', 'cat', 'scroll', 'cable'
+  ];
+  const groups = new Map();
+  keys.forEach((key) => {
+    const groupKey = contentGroupKey(key);
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(key);
+  });
+  return Array.from(groups.entries()).sort((a, b) => {
+    const aIndex = preferredOrder.indexOf(a[0]);
+    const bIndex = preferredOrder.indexOf(b[0]);
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
+    return a[0].localeCompare(b[0]);
+  });
+}
+
+function renderContentGroupOptions(groups) {
+  const select = document.getElementById('contentGroupFilter');
+  if (!select) return;
+  const currentValue = select.value;
+  select.innerHTML = `<option value="">${esc(t('content.allSections'))}</option>` + groups.map(([groupKey, keys]) => (
+    `<option value="${esc(groupKey)}">${esc(contentGroupLabel(groupKey))} (${keys.length})</option>`
+  )).join('');
+  select.value = groups.some(([groupKey]) => groupKey === currentValue) ? currentValue : '';
+}
+
+function updateContentFieldDirtyState(field) {
+  if (!field) return;
+  const baseline = baselineTranslations[field.dataset.lang]?.[field.dataset.key] || '';
+  field.classList.toggle('is-dirty', field.value !== baseline);
+}
+
+function updateContentEntryDirtyState(key) {
+  const entry = document.querySelector(`.cms-entry[data-key="${key}"]`);
+  if (!entry) return;
+  const fields = Array.from(entry.querySelectorAll('.content-textarea'));
+  entry.classList.toggle('is-dirty', fields.some((field) => field.classList.contains('is-dirty')));
+}
+
+function refreshSelectedEditorState() {
+  if (!selectedContentKey) return;
+  ['en', 'ar'].forEach((lang) => {
+    const field = document.getElementById(lang === 'en' ? 'selectedContentEn' : 'selectedContentAr');
+    if (!field) return;
+    const baseline = baselineTranslations[lang]?.[selectedContentKey] || '';
+    field.classList.toggle('is-dirty', field.value !== baseline);
+  });
+}
+
+function highlightSelectedContentEntry() {
+  document.querySelectorAll('.cms-entry').forEach((entry) => {
+    entry.classList.toggle('is-selected', entry.dataset.key === selectedContentKey);
+  });
+}
+
+function previewFrameWindow() {
+  const frame = document.getElementById('contentPreviewFrame');
+  return frame?.contentWindow || null;
+}
+
+function previewFrameDocument() {
+  const frame = document.getElementById('contentPreviewFrame');
+  return frame?.contentDocument || null;
+}
+
+function updatePreviewLanguageButtons() {
+  document.querySelectorAll('[data-preview-lang]').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.previewLang === previewLang);
+  });
+}
+
+function injectPreviewSelectionStyles(doc) {
+  if (!doc || doc.getElementById('starAdminPreviewStyles')) return;
+  const style = doc.createElement('style');
+  style.id = 'starAdminPreviewStyles';
+  style.textContent = `
+    [data-i18n], [data-cms-image] { cursor: pointer !important; }
+    [data-i18n].star-admin-hover,
+    [data-cms-image].star-admin-hover { outline: 2px dashed rgba(185,130,46,0.85) !important; outline-offset: 3px !important; }
+    [data-i18n].star-admin-selected,
+    [data-cms-image].star-admin-selected { outline: 3px solid rgba(30,58,90,0.82) !important; outline-offset: 4px !important; background: rgba(30,58,90,0.08) !important; }
+  `;
+  doc.head.appendChild(style);
+}
+
+function applyPreviewContentValue(key, lang) {
+  const doc = previewFrameDocument();
+  if (!doc || previewLang !== lang) return;
+  const value = siteConfig.translations?.[lang]?.[key] || '';
+  doc.querySelectorAll(`[data-i18n="${key}"]`).forEach((el) => {
+    const attr = el.getAttribute('data-i18n-attr');
+    if (attr) el.setAttribute(attr, value);
+    else el.innerHTML = value;
+  });
+  doc.querySelectorAll(`[data-i18n-placeholder="${key}"]`).forEach((el) => {
+    el.setAttribute('placeholder', value);
+  });
+}
+
+function highlightPreviewSelection() {
+  const doc = previewFrameDocument();
+  if (!doc) return;
+  doc.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.classList.remove('star-admin-selected');
+    if (selectedContentKey && el.getAttribute('data-i18n') === selectedContentKey) {
+      el.classList.add('star-admin-selected');
+    }
+  });
+  doc.querySelectorAll('[data-cms-image]').forEach((el) => {
+    el.classList.remove('star-admin-selected');
+    if (selectedMediaKey && el.getAttribute('data-cms-image') === selectedMediaKey) {
+      el.classList.add('star-admin-selected');
+    }
+  });
+}
+
+function applyCurrentDraftsToPreview() {
+  Object.keys(siteConfig.translations?.[previewLang] || {}).forEach((key) => {
+    applyPreviewContentValue(key, previewLang);
+  });
+}
+
+function setupPreviewFrameInteractions() {
+  const win = previewFrameWindow();
+  const doc = previewFrameDocument();
+  if (!win || !doc) return;
+
+  injectPreviewSelectionStyles(doc);
+  if (typeof win.setLanguage === 'function') {
+    win.setLanguage(previewLang);
+  }
+
+  doc.querySelectorAll('[data-i18n]').forEach((el) => {
+    if (el.dataset.starAdminBound === '1') return;
+    el.dataset.starAdminBound = '1';
+    el.addEventListener('mouseenter', () => el.classList.add('star-admin-hover'));
+    el.addEventListener('mouseleave', () => el.classList.remove('star-admin-hover'));
+    el.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const key = el.getAttribute('data-i18n');
+      if (key) selectContentKey(key, { fromPreview: true });
+    });
+  });
+
+  doc.querySelectorAll('[data-cms-image]').forEach((el) => {
+    if (el.dataset.starAdminImageBound === '1') return;
+    el.dataset.starAdminImageBound = '1';
+    el.addEventListener('mouseenter', () => el.classList.add('star-admin-hover'));
+    el.addEventListener('mouseleave', () => el.classList.remove('star-admin-hover'));
+    el.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const key = el.getAttribute('data-cms-image');
+      if (key) selectMediaKey(key, { fromPreview: true });
+    });
+  });
+
+  applyCurrentDraftsToPreview();
+  highlightPreviewSelection();
+}
+
+function reloadContentPreview() {
+  const frame = document.getElementById('contentPreviewFrame');
+  if (!frame) return;
+  frame.src = `/?adminPreview=1&t=${Date.now()}`;
+}
+
+function setPreviewLanguage(lang) {
+  previewLang = lang;
+  updatePreviewLanguageButtons();
+  const win = previewFrameWindow();
+  if (win && typeof win.setLanguage === 'function') {
+    win.setLanguage(lang);
+    setTimeout(() => {
+      setupPreviewFrameInteractions();
+      highlightPreviewSelection();
+    }, 120);
+  }
+}
+
+function selectContentKey(key, options = {}) {
+  if (!key) return;
+  selectedContentKey = key;
+  selectedMediaKey = '';
+
+  const empty = document.getElementById('contentSelectionEmpty');
+  const panel = document.getElementById('contentSelectionPanel');
+  const mediaPanel = document.getElementById('mediaSelectionPanel');
+  const label = document.getElementById('selectedContentKeyLabel');
+  const enField = document.getElementById('selectedContentEn');
+  const arField = document.getElementById('selectedContentAr');
+
+  if (empty) empty.style.display = 'none';
+  if (panel) panel.style.display = 'flex';
+  if (mediaPanel) mediaPanel.style.display = 'none';
+  if (label) label.textContent = key;
+  if (enField) enField.value = siteConfig.translations?.en?.[key] || '';
+  if (arField) arField.value = siteConfig.translations?.ar?.[key] || '';
+
+  refreshSelectedEditorState();
+  highlightSelectedContentEntry();
+  highlightPreviewSelection();
+
+  const matchingEntry = document.querySelector(`.cms-entry[data-key="${key}"]`);
+  if (matchingEntry) {
+    matchingEntry.closest('.cms-group')?.setAttribute('open', '');
+  }
+}
+
+function selectMediaKey(key, options = {}) {
+  if (!key) return;
+  selectedMediaKey = key;
+  selectedContentKey = '';
+
+  const empty = document.getElementById('contentSelectionEmpty');
+  const textPanel = document.getElementById('contentSelectionPanel');
+  const mediaPanel = document.getElementById('mediaSelectionPanel');
+  const label = document.getElementById('selectedMediaKeyLabel');
+  const urlField = document.getElementById('selectedMediaUrl');
+
+  const media = siteConfig.contentBlocks?.mediaImages?.[key] || {};
+  const imageUrl = media.imageUrl || '';
+
+  if (empty) empty.style.display = 'none';
+  if (textPanel) textPanel.style.display = 'none';
+  if (mediaPanel) mediaPanel.style.display = 'flex';
+  if (label) label.textContent = media.label ? `${media.label} (${key})` : key;
+  if (urlField) urlField.value = imageUrl;
+
+  syncImagePreview('selectedMediaUrl', 'selectedMediaPreviewImg', 'selectedMediaPreviewEmpty');
+  highlightSelectedContentEntry();
+  highlightPreviewSelection();
+
+  const editor = document.getElementById(`media-editor-${key}`);
+  if (editor) editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function applyMediaDraftToPreview(key, imageUrl) {
+  const doc = previewFrameDocument();
+  if (!doc) return;
+  doc.querySelectorAll(`[data-cms-image="${key}"]`).forEach((img) => {
+    if (imageUrl) img.src = imageUrl;
+  });
+}
+
+function updateSelectedMediaValue(value) {
+  if (!selectedMediaKey) return;
+  if (!siteConfig.contentBlocks.mediaImages) siteConfig.contentBlocks.mediaImages = {};
+  if (!siteConfig.contentBlocks.mediaImages[selectedMediaKey]) {
+    siteConfig.contentBlocks.mediaImages[selectedMediaKey] = { label: selectedMediaKey, imageUrl: '' };
+  }
+  siteConfig.contentBlocks.mediaImages[selectedMediaKey].imageUrl = value;
+
+  const editorInput = document.getElementById(`media-${selectedMediaKey}-image`);
+  if (editorInput && editorInput.value !== value) editorInput.value = value;
+  syncImagePreview('selectedMediaUrl', 'selectedMediaPreviewImg', 'selectedMediaPreviewEmpty');
+  if (editorInput) {
+    syncImagePreview(`media-${selectedMediaKey}-image`, `media-${selectedMediaKey}-preview-img`, `media-${selectedMediaKey}-preview-empty`);
+  }
+  applyMediaDraftToPreview(selectedMediaKey, value);
+}
+
+function focusSelectedMediaInList() {
+  if (!selectedMediaKey) return;
+  const editor = document.getElementById(`media-editor-${selectedMediaKey}`);
+  if (!editor) return;
+  editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function focusSelectedContentInList() {
+  if (!selectedContentKey) return;
+  const entry = document.querySelector(`.cms-entry[data-key="${selectedContentKey}"]`);
+  if (!entry) return;
+  entry.closest('.cms-group')?.setAttribute('open', '');
+  entry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function applyTranslationDraft(lang, key, value) {
+  if (!siteConfig.translations[lang]) siteConfig.translations[lang] = {};
+  siteConfig.translations[lang][key] = value;
+
+  document.querySelectorAll(`.content-textarea[data-lang="${lang}"][data-key="${key}"]`).forEach((field) => {
+    if (field.value !== value) field.value = value;
+    updateContentFieldDirtyState(field);
+  });
+
+  updateContentEntryDirtyState(key);
+
+  if (selectedContentKey === key) {
+    const selectedField = document.getElementById(lang === 'en' ? 'selectedContentEn' : 'selectedContentAr');
+    if (selectedField && selectedField.value !== value) selectedField.value = value;
+    refreshSelectedEditorState();
+  }
+
+  applyPreviewContentValue(key, lang);
+  updateContentStats();
+}
+
+function updateSelectedContentValue(lang, value) {
+  if (!selectedContentKey) return;
+  applyTranslationDraft(lang, selectedContentKey, value);
+}
+
+function renderContentEditor() {
+  const body = document.getElementById('contentBody');
+  const en = siteConfig.translations?.en || {};
+  const ar = siteConfig.translations?.ar || {};
+  const keys = Array.from(new Set([...Object.keys(en), ...Object.keys(ar)])).sort();
+
+  if (!keys.length) {
+    body.innerHTML = `<div class="empty-state"><div class="empty-icon">-</div><p>${esc(t('content.noKeys'))}</p></div>`;
+    updateContentStats();
+    return;
+  }
+
+  const groups = buildContentGroups(keys);
+  renderContentGroupOptions(groups);
+
+  body.innerHTML = groups.map(([groupKey, groupKeys]) => `
+    <details class="cms-group" data-group="${esc(groupKey)}" open>
+      <summary class="cms-group-summary">
+        <div class="cms-group-title-wrap">
+          <span class="cms-group-title">${esc(contentGroupLabel(groupKey))}</span>
+          <span class="cms-group-meta">${esc(t('content.groupEntries', { count: groupKeys.length }))}</span>
+        </div>
+        <span class="cms-group-count">${groupKeys.length}</span>
+      </summary>
+      <div class="cms-group-body">
+        ${groupKeys.map((key) => `
+          <article class="cms-entry" data-content-row data-key="${esc(key)}" data-group="${esc(groupKey)}" data-search="${esc(`${key} ${(en[key] || '')} ${(ar[key] || '')}`).toLowerCase()}">
+            <div class="cms-entry-meta">
+              <div class="cms-entry-key">${esc(key)}</div>
+              <div class="cms-entry-hint">${esc(t('content.copyHint'))}</div>
+            </div>
+            <div class="cms-locale-card content-col-en">
+              <label class="cms-locale-label" for="content-en-${esc(key)}">${esc(t('common.english'))}</label>
+              <textarea class="content-textarea" id="content-en-${esc(key)}" data-lang="en" data-key="${esc(key)}">${esc(en[key] || '')}</textarea>
+            </div>
+            <div class="cms-locale-card content-col-ar">
+              <label class="cms-locale-label" for="content-ar-${esc(key)}">${esc(t('common.arabic'))}</label>
+              <textarea class="content-textarea" id="content-ar-${esc(key)}" data-lang="ar" data-key="${esc(key)}">${esc(ar[key] || '')}</textarea>
+            </div>
+          </article>
+        `).join('')}
+      </div>
+    </details>
+  `).join('');
+
+  updateContentStats();
+}
+
+function updateContentStats() {
+  const total = document.querySelectorAll('[data-content-row]').length;
+  const visible = Array.from(document.querySelectorAll('[data-content-row]')).filter((row) => row.style.display !== 'none').length;
+  const dirty = document.querySelectorAll('.cms-entry.is-dirty').length;
+  const totalEl = document.getElementById('contentStatTotal');
+  const visibleEl = document.getElementById('contentStatVisible');
+  const dirtyEl = document.getElementById('contentStatDirty');
+  if (totalEl) totalEl.textContent = total;
+  if (visibleEl) visibleEl.textContent = visible;
+  if (dirtyEl) dirtyEl.textContent = dirty;
+}
+
+function filterContentRows() {
+  const query = document.getElementById('contentSearchInput').value.trim().toLowerCase();
+  const activeGroup = document.getElementById('contentGroupFilter').value;
+  document.querySelectorAll('[data-content-row]').forEach((row) => {
+    const haystack = row.getAttribute('data-search') || '';
+    const rowGroup = row.getAttribute('data-group') || '';
+    const matchesQuery = !query || haystack.includes(query);
+    const matchesGroup = !activeGroup || rowGroup === activeGroup;
+    row.style.display = matchesQuery && matchesGroup ? '' : 'none';
+  });
+
+  document.querySelectorAll('.cms-group').forEach((group) => {
+    const hasVisibleRows = Array.from(group.querySelectorAll('[data-content-row]')).some((row) => row.style.display !== 'none');
+    group.style.display = hasVisibleRows ? '' : 'none';
+  });
+
+  updateContentStats();
+}
+
+function setContentViewMode(mode) {
+  contentViewMode = mode;
+  const container = document.getElementById('contentBody');
+  if (container) {
+    container.classList.remove('mode-split', 'mode-en', 'mode-ar');
+    container.classList.add(`mode-${mode}`);
+  }
+  document.querySelectorAll('.cms-view-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+}
+
+function expandAllContentGroups() {
+  document.querySelectorAll('.cms-group').forEach((group) => {
+    group.open = true;
+  });
+}
+
+function collapseAllContentGroups() {
+  document.querySelectorAll('.cms-group').forEach((group) => {
+    group.open = false;
+  });
+}
+
+function bindContentEditorInteractions() {
+  document.querySelectorAll('.content-textarea').forEach((field) => {
+    field.addEventListener('input', () => {
+      applyTranslationDraft(field.dataset.lang, field.dataset.key, field.value);
+    });
+    updateContentFieldDirtyState(field);
+    updateContentEntryDirtyState(field.dataset.key);
+  });
+}
+
+async function loadSiteConfig() {
+  const body = document.getElementById('contentBody');
+  if (body) {
+    body.innerHTML = `<div class="loading-row">${esc(t('common.loadingContent'))}</div>`;
+  }
+
+  try {
+    const res = await fetch(`${API}/admin/site-config`, authHeaders());
+    if (!res.ok) throw new Error(t('messages.failedLoadSiteConfig'));
+    const result = await res.json();
+    const defaultBlocks = cloneContentBlocks(DEFAULT_CONTENT_BLOCKS);
+    const storedBlocks = cloneContentBlocks(result.data?.contentBlocks || {});
+    siteConfig = {
+      storefront: { ...DEFAULT_SITE_SETTINGS, ...(result.data?.storefront || {}) },
+      translations: {
+        en: { ...(DEFAULT_TRANSLATIONS.en || {}), ...(result.data?.translations?.en || {}) },
+        ar: { ...(DEFAULT_TRANSLATIONS.ar || {}), ...(result.data?.translations?.ar || {}) },
+      },
+      contentBlocks: {
+        ...defaultBlocks,
+        ...storedBlocks,
+        mediaImages: {
+          ...(defaultBlocks.mediaImages || {}),
+          ...(storedBlocks.mediaImages || {}),
+        },
+        gallery: {
+          ...(defaultBlocks.gallery || {}),
+          ...(storedBlocks.gallery || {}),
+        },
+      },
+    };
+    baselineTranslations = cloneTranslationsMap(siteConfig.translations);
+    fillStorefrontForm();
+    renderContentEditor();
+    renderContentBlocksEditor();
+    bindContentEditorInteractions();
+    setContentViewMode(contentViewMode);
+    filterContentRows();
+    applyAdminBranding();
+    updatePreviewLanguageButtons();
+    if (!document.getElementById('contentPreviewFrame')?.src) {
+      reloadContentPreview();
+    } else {
+      setupPreviewFrameInteractions();
+    }
+    if (selectedContentKey) {
+      selectContentKey(selectedContentKey);
+    }
+  } catch (error) {
+    if (body) {
+      body.innerHTML = `<div class="error-state"><div class="error-icon">!</div><h3>${esc(t('content.errorTitle'))}</h3><p>${esc(error.message || t('messages.unknownError'))}</p></div>`;
+    }
+  }
+}
+
+async function saveStorefrontSettings() {
+  if (!ensureAdminSession()) return;
+  const payload = {
+    siteName: document.getElementById('sfSiteName').value.trim(),
+    logoUrl: document.getElementById('sfLogoUrl').value.trim(),
+    metaTitle: document.getElementById('sfMetaTitle').value.trim(),
+    metaDescription: document.getElementById('sfMetaDescription').value.trim(),
+    whatsappNumber: document.getElementById('sfWhatsappNumber').value.trim(),
+    supportPhone: document.getElementById('sfSupportPhone').value.trim(),
+    facebookUrl: document.getElementById('sfFacebookUrl').value.trim(),
+    instagramUrl: document.getElementById('sfInstagramUrl').value.trim(),
+    tiktokUrl: document.getElementById('sfTiktokUrl').value.trim(),
+    whatsappDefaultMessage: document.getElementById('sfWhatsappMessage').value.trim(),
+    heroOrdersDelivered: document.getElementById('sfHeroOrders').value.trim(),
+    heroRating: document.getElementById('sfHeroRating').value.trim(),
+    heroCodPercent: document.getElementById('sfHeroCod').value.trim(),
+    currencyCode: document.getElementById('sfCurrencyCode').value.trim(),
+  };
+
+  try {
+    const res = await fetch(`${API}/admin/site-config/storefront`, {
+      method: 'PUT',
+      ...authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || t('messages.failedSaveSettings'));
+    siteConfig.storefront = { ...siteConfig.storefront, ...payload };
+    applyAdminBranding();
+    reloadContentPreview();
+    showToast(t('messages.siteConfigUpdated'), 'success');
+  } catch (error) {
+    showToast(apiErrorMessage(error, t('messages.failedSaveSettings')), 'error');
+  }
+}
+
+async function saveTranslations() {
+  if (!ensureAdminSession()) return;
+  const payload = cloneTranslationsMap(siteConfig.translations);
+
+  try {
+    const res = await fetch(`${API}/admin/site-config/translations`, {
+      method: 'PUT',
+      ...authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || t('messages.failedSaveContent'));
+    siteConfig.translations = {
+      en: { ...siteConfig.translations.en, ...payload.en },
+      ar: { ...siteConfig.translations.ar, ...payload.ar },
+    };
+    baselineTranslations = cloneTranslationsMap(siteConfig.translations);
+    renderContentEditor();
+    bindContentEditorInteractions();
+    setContentViewMode(contentViewMode);
+    filterContentRows();
+    setupPreviewFrameInteractions();
+    if (selectedContentKey) {
+      selectContentKey(selectedContentKey);
+    }
+    showToast(t('messages.siteTextUpdated'), 'success');
+  } catch (error) {
+    showToast(apiErrorMessage(error, t('messages.failedSaveContent')), 'error');
+  }
+}
+
+async function saveContentBlocks() {
+  if (!ensureAdminSession()) return;
+  const payload = cloneContentBlocks(siteConfig.contentBlocks);
+
+  try {
+    const res = await fetch(`${API}/admin/site-config/content-blocks`, {
+      method: 'PUT',
+      ...authHeaders(),
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(result.message || 'Failed to save section content');
+    siteConfig.contentBlocks = cloneContentBlocks(payload);
+    renderContentBlocksEditor();
+    reloadContentPreview();
+    showToast('Structured sections updated', 'success');
+  } catch (error) {
+    showToast(apiErrorMessage(error, 'Failed to save section content'), 'error');
+  }
+}
+
+// -- DELETE CONFIRM ---------------------------------------------
+let pendingDeleteFn = null;
+
+function confirmDeleteOrder(id) {
+  document.getElementById('confirmTitle').textContent = t('confirm.deleteOrderTitle');
+  document.getElementById('confirmMsg').textContent = t('confirm.deleteOrderMessage', { id });
+  pendingDeleteFn = () => doDeleteOrder(id);
+  document.getElementById('confirmOkBtn').onclick = () => { pendingDeleteFn && pendingDeleteFn(); closeConfirm(); };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+function confirmDeleteProduct(id) {
+  const p = allProducts.find(x => x.id === id);
+  document.getElementById('confirmTitle').textContent = t('confirm.deleteProductTitle');
+  document.getElementById('confirmMsg').textContent = t('confirm.deleteProductMessage', { name: p?.name || '' });
+  pendingDeleteFn = () => doDeleteProduct(id);
+  document.getElementById('confirmOkBtn').onclick = () => { pendingDeleteFn && pendingDeleteFn(); closeConfirm(); };
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+
+function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
+
+async function doDeleteOrder(id) {
+  try {
+    const res = await fetch(`${API}/orders/admin/${id}`, { method:'DELETE', ...authHeaders() });
+    if (!res.ok) throw new Error();
+    showToast(t('messages.orderDeleted'), 'success');
+    loadOrders(currentPage);
+    loadStats();
+  } catch { showToast(t('messages.failedDeleteOrder'), 'error'); }
+}
+
+async function doDeleteProduct(id) {
+  try {
+    const res = await fetch(`${API}/products/admin/${id}`, { method:'DELETE', ...authHeaders() });
+    if (!res.ok) throw new Error();
+    showToast(t('messages.productDeleted'), 'success');
+    loadProducts();
+  } catch { showToast(t('messages.failedDeleteProduct'), 'error'); }
+}
+
+// -- PAGINATION -------------------------------------------------
+function renderPagination(pag, elId, loadFn) {
+  const el = document.getElementById(elId);
+  if (!pag || pag.pages <= 1) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  let btns = '';
+  for (let i = 1; i <= pag.pages; i++) {
+    btns += `<button class="page-btn${i===pag.page?' active':''}" onclick="${loadFn.name}(${i})">${i}</button>`;
+  }
+  el.innerHTML = `
+    <span>${esc(t('messages.showing', { from: (pag.page-1)*pag.limit+1, to: Math.min(pag.page*pag.limit,pag.total), total: pag.total }))}</span>
+    <div class="page-btns">
+      <button class="page-btn" onclick="${loadFn.name}(${pag.page-1})" ${pag.page===1?'disabled':''}>${esc(t('messages.prev'))}</button>
+      ${btns}
+      <button class="page-btn" onclick="${loadFn.name}(${pag.page+1})" ${pag.page===pag.pages?'disabled':''}>${esc(t('messages.next'))}</button>
+    </div>`;
+}
+
+// -- HELPERS -----------------------------------------------------
+function ensureAdminSession() {
+  if (adminToken) return true;
+  showToast('Session expired. Please sign in again.', 'error');
+  logout();
+  return false;
+}
+
+function apiErrorMessage(error, fallback) {
+  if (!error) return fallback;
+  if (error.name === 'TypeError' && /fetch/i.test(error.message || '')) {
+    return `${fallback}. API connection failed. Check the Cloudflare Worker deployment.`;
+  }
+  return error.message || fallback;
+}
+
+function authHeaders() {
+  return {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+    },
+  };
+}
+
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function showBackendError(tbodyId, colspan) {
+  document.getElementById(tbodyId).innerHTML = `
+    <tr><td colspan="${colspan}">
+      <div class="error-state">
+        <div class="error-icon">!</div>
+        <h3>${esc(t('messages.backendTitle'))}</h3>
+        <p>${esc(t('messages.backendHint', { api: API }))}</p>
+        <button class="retry-btn" onclick="loadOrders(); loadStats(); loadProducts()">${esc(t('common.retry'))}</button>
+      </div>
+    </td></tr>`;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// -- AUTO-REFRESH -------------------------------------------------
+setInterval(() => {
+  if (!adminToken || !document.getElementById('shell').classList.contains('active')) return;
+  loadOrders(currentPage);
+  loadStats();
+}, 30000);
+
+document.getElementById('contentPreviewFrame')?.addEventListener('load', () => {
+  setTimeout(() => {
+    setupPreviewFrameInteractions();
+    if (selectedContentKey) {
+      selectContentKey(selectedContentKey);
+    }
+  }, 300);
+});
+
+// -- INIT -------------------------------------------------------
+applyStaticAdminLanguage();
+requireAuth().then((ok) => {
+  if (ok) bootDashboard();
+});
+</script>
+</body>
+</html>

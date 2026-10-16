@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>STAR — Premium Magnetic Car Accessories for Drivers</title>
+  <meta name="description" content="STAR offers premium magnetic car phone stands, 65W fast chargers, and braided charging cables for Uber, Careem, and delivery drivers in Egypt. Free delivery. Cash on delivery."/>
+  <!-- Cloudflare Worker API is served from the same domain. -->
+  <meta name="star-api-url" content="/api"/>
+  <meta name="star-whatsapp" content="201000000000"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/styles.css"/>
+  <script src="js/site-defaults.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/promotions.js"></script>
+  <!-- Meta Pixel Code -->
+  <script>
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', 'YOUR_META_PIXEL_ID');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=YOUR_META_PIXEL_ID&ev=PageView&noscript=1"/></noscript>
+  <!-- End Meta Pixel Code -->
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a href="#" class="nav-logo">
+      <img src="logo.png" alt="STAR97 logo" class="nav-logo-img" id="navLogoImg" data-cms-image="navLogo"/>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#products" data-i18n="nav_products">Products</a></li>
+      <li><a href="#features" data-i18n="nav_features">Features</a></li>
+      <li><a href="#faq" data-i18n="nav_faq">FAQ</a></li>
+      <li><a href="#order" class="nav-cta" data-i18n="nav_order">Order Now</a></li>
+      <li>
+        <button class="lang-toggle-btn" id="langToggleBtn" onclick="toggleLanguage()" aria-label="Switch language">
+          عربي
+        </button>
+      </li>
+    </ul>
+    <div class="nav-right-mobile">
+      <button class="lang-toggle-btn lang-toggle-mobile" onclick="toggleLanguage()" aria-label="Switch language">عربي</button>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#products" data-i18n="nav_products">Products</a>
+    <a href="#features" data-i18n="nav_features">Features</a>
+    <a href="#faq" data-i18n="nav_faq">FAQ</a>
+    <a href="#order" data-i18n="nav_order">Order Now</a>
+  </div>
+</nav>
+
+<!-- HERO — BUNDLE DEAL -->
+<section class="hero simple-hero" id="home">
+  <div class="hero-glow"></div>
+  <div class="hero-glow hero-glow-2"></div>
+
+  <div class="bundle-hero-container">
+    <div class="bundle-hero-left">
+      <div class="hero-badge" data-i18n="hero_badge">Premium Car Accessories</div>
+      <h1 class="hero-title">
+        <span class="glow-text" data-i18n="hero_headline">Everything You Need While Driving</span>
+      </h1>
+      <p class="hero-sub" data-i18n="hero_subheadline">Quality car accessories with fast, cash-on-delivery shipping across Egypt.</p>
+
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-num" id="heroOrdersDelivered" data-i18n="hero_stat1_num">500+</span>
+          <span class="stat-label" data-i18n="hero_stat1_label">Orders Delivered</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-num" id="heroRating" data-i18n="hero_stat2_num">4.9</span>
+          <span class="stat-label" data-i18n="hero_stat2_label">Avg. Rating</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-num" id="heroCodPercent" data-i18n="hero_stat3_num">100%</span>
+          <span class="stat-label" data-i18n="hero_stat3_label">Cash on Delivery</span>
+        </div>
+      </div>
+
+      <div class="hero-cta-row">
+        <a href="#products" class="hero-cta-btn" data-i18n="hero_shop_now">Shop Now</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-scroll-indicator">
+    <div class="scroll-line"></div>
+    <span data-i18n="scroll_label">Scroll</span>
+  </div>
+</section>
+
+<!-- WHY STAR -->
+<section class="problem" id="problem">
+  <div class="container">
+    <div class="section-label" data-i18n="why_label">Why Star Shop97?</div>
+    <h2 class="section-title" data-i18n="why_title">Built for Professional Drivers</h2>
+    <p class="section-sub" data-i18n="why_sub">The Soloffer C253 + START S015 bundle gives you everything you need for a professional, distraction-free drive — every single shift.</p>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon" data-i18n="benefit1_icon">⚡</div>
+        <h3 data-i18n="benefit1_title">52.5W Dual Fast Charging</h3>
+        <p data-i18n="benefit1_desc">Soloffer C253 charges two devices simultaneously — PD 30W Type-C + QC 22.5W USB-A. Never run out of battery during a ride.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon" data-i18n="benefit2_icon">🧲</div>
+        <h3 data-i18n="benefit2_title">N52 Magnetic Grip</h3>
+        <p data-i18n="benefit2_desc">START S015 uses industry-leading N52 magnets. Your phone stays locked in place — no wobble, no drop, full focus on the road.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon" data-i18n="benefit3_icon">🎁</div>
+        <h3 data-i18n="benefit3_title">Free iPhone Cable Included</h3>
+        <p data-i18n="benefit3_desc">Every bundle comes with a FREE AORAX Lightning cable — fast charging, braided for durability, fits all iPhone models.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon" data-i18n="benefit4_icon">👥</div>
+        <h3 data-i18n="benefit4_title">Better Passenger Experience</h3>
+        <p data-i18n="benefit4_desc">A professional setup earns 5-star reviews. Passengers notice a clean, premium-looking car interior.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon" data-i18n="benefit5_icon">💎</div>
+        <h3 data-i18n="benefit5_title">Premium Metal Design</h3>
+        <p data-i18n="benefit5_desc">Both the C253 charger and S015 holder feature premium metal construction — built to last, looks luxury.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon" data-i18n="benefit6_icon">🚗</div>
+        <h3 data-i18n="benefit6_title">One-Hand Operation</h3>
+        <p data-i18n="benefit6_desc">Mount and unmount your phone in one hand while stopped — quick, effortless, safe.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section class="products" id="products">
+  <div class="container">
+    <div class="section-label" data-i18n="products_label">Individual Products</div>
+    <h2 class="section-title" data-i18n="products_title">Shop Individually</h2>
+    <p class="section-sub" data-i18n="products_sub">Prefer to pick and choose? Browse all products and build your own kit.</p>
+    <!-- Category Filter -->
+    <div class="category-filter-bar" id="categoryFilter"></div>
+    <!-- Products Grid (loaded from API) -->
+    <div class="products-grid" id="productsGrid">
+      <!-- Loaded dynamically -->
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-label" data-i18n="features_label">Product Features</div>
+    <h2 class="section-title" data-i18n="features_title">Why Drivers Choose This Bundle</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" data-i18n="feat1_icon">⚡</div>
+        <h3 data-i18n="feat1_title">PD 30W Type-C Charging</h3>
+        <p data-i18n="feat1_desc">Soloffer C253 delivers 30W Power Delivery via USB-C — the fastest standard for modern phones including iPhone 15+, Samsung S series.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" data-i18n="feat2_icon">🔋</div>
+        <h3 data-i18n="feat2_title">QC 22.5W USB-A Port</h3>
+        <p data-i18n="feat2_desc">Charge a second device simultaneously at 22.5W via USB-A — perfect for charging a passenger's phone or a power bank.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" data-i18n="feat3_icon">🧲</div>
+        <h3 data-i18n="feat3_title">N52 Grade Magnets</h3>
+        <p data-i18n="feat3_desc">START S015 uses the strongest commercially available N52 magnets — your phone stays stable at 120 km/h on any road.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" data-i18n="feat4_icon">🤚</div>
+        <h3 data-i18n="feat4_title">One-Hand Mount & Release</h3>
+        <p data-i18n="feat4_desc">Place or remove your phone instantly with one hand at a traffic stop — safe, fast, and effortless every time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" data-i18n="feat5_icon">🍎</div>
+        <h3 data-i18n="feat5_title">AORAX Lightning Cable</h3>
+        <p data-i18n="feat5_desc">The included FREE AORAX cable supports fast charging for all iPhone models — braided design resists tangling and daily wear.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" data-i18n="feat6_icon">🛡️</div>
+        <h3 data-i18n="feat6_title">Safe Charging Technology</h3>
+        <p data-i18n="feat6_desc">Built-in overcharge, overheat, and short-circuit protection — charges your phone safely all day, every shift.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="gallery" id="gallery">
+  <div class="container">
+    <div class="section-label" data-i18n="gallery_label">In Action</div>
+    <h2 class="section-title" data-i18n="gallery_title">See STAR in Action</h2>
+    <div class="interactive-gallery-wrapper" id="galleryDynamic"></div>
+  
+  </div>
+</section>
+
+<!-- ORDER SECTION -->
+<section class="order" id="order">
+  <div class="container">
+    <div class="section-label" data-i18n="order_label">Place Your Order</div>
+    <h2 class="section-title" data-i18n="order_title">Your Cart &amp; Checkout</h2>
+    <p class="section-sub" data-i18n="order_sub">Add products above, then fill in your details to confirm your order.</p>
+
+    <!-- Upsell Banner -->
+    <div class="upsell-banner" id="upsellBanner" style="display:none"></div>
+
+    <div class="order-wrapper">
+      <!-- CART PANEL -->
+      <div class="cart-panel" id="cartSummary">
+        <div class="cart-header">
+          <h3><span data-i18n="cart_title">🛒 Your Cart</span> <span class="cart-count" id="cartBadge"></span></h3>
+        </div>
+        <div id="emptyCart" class="empty-cart">
+          <div style="font-size:2.5rem;margin-bottom:12px">🛒</div>
+          <p data-i18n="cart_empty">Your cart is empty.<br/>Add a product or bundle above.</p>
+        </div>
+        <div id="cartItems" class="cart-items-list"></div>
+        <div class="cart-footer">
+          <div class="cart-subtotal">
+            <span data-i18n="subtotal">Subtotal</span>
+            <span id="cartTotal" class="cart-total-val">0 EGP</span>
+          </div>
+          <div class="cart-discount-row" id="cartDiscountRow" style="display:none">
+            <span data-i18n="cart_discount">Discount</span>
+            <span id="cartDiscount" class="cart-discount-val">0 EGP</span>
+          </div>
+          <div class="promo-code-box" id="promoCodeBox">
+            <div class="promo-code-input-row">
+              <input type="text" id="promoCodeInput" autocomplete="off" spellcheck="false" placeholder="Promo code"/>
+              <button type="button" id="promoCodeBtn" onclick="applyPromoCode()">Apply</button>
+            </div>
+            <div class="promo-code-applied" id="promoCodeApplied" style="display:none">
+              <span id="promoCodeAppliedText"></span>
+              <button type="button" class="promo-code-remove" onclick="removePromoCode()" aria-label="Remove code">✕</button>
+            </div>
+            <div class="promo-code-msg" id="promoCodeMsg"></div>
+          </div>
+          <div class="cart-discount-row" id="cartCodeRow" style="display:none">
+            <span id="cartCodeLabel">Promo code</span>
+            <span id="cartCodeDiscount" class="cart-discount-val">0 EGP</span>
+          </div>
+          <div class="cart-grand-row" id="cartGrandRow" style="display:none">
+            <span data-i18n="cart_grand_total">Total</span>
+            <span id="cartGrand" class="cart-grand-val">0 EGP</span>
+          </div>
+          <div class="order-trust">
+            <div class="trust-badge" data-i18n="trust1">🔒 Secure Order</div>
+            <div class="trust-badge" data-i18n="trust2">🚚 Free Delivery</div>
+            <div class="trust-badge" data-i18n="trust3">💵 Cash on Delivery</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECKOUT FORM -->
+      <div class="checkout-side">
+        <!-- Success state -->
+        <div id="orderSuccess" class="order-success" style="display:none">
+          <div class="success-icon">✅</div>
+          <h3 data-i18n="success_title">Order Placed!</h3>
+          <p data-i18n="success_msg">Your order has been submitted successfully.<br/>We'll call you soon to confirm delivery.</p>
+          <button class="submit-btn" onclick="resetForm()" style="margin-top:24px" data-i18n="success_again">Place Another Order</button>
+        </div>
+
+        <!-- Form -->
+        <form class="order-form" id="orderForm" onsubmit="submitOrder(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fullName" data-i18n="label_name">Full Name *</label>
+              <input type="text" id="fullName" data-i18n-placeholder="placeholder_name" placeholder="Your full name" required autocomplete="name"/>
+            </div>
+            <div class="form-group">
+              <label for="phone" data-i18n="label_phone">Phone Number *</label>
+              <input type="tel" id="phone" placeholder="01012345678" required maxlength="11" autocomplete="tel" inputmode="numeric"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="city" data-i18n="label_city">City / Governorate *</label>
+              <input type="text" id="city" data-i18n-placeholder="placeholder_city" placeholder="e.g. Cairo, Alexandria" required autocomplete="address-level2"/>
+            </div>
+            <div class="form-group">
+              <label for="address" data-i18n="label_address">Delivery Address *</label>
+              <input type="text" id="address" data-i18n-placeholder="placeholder_address" placeholder="Street, building, floor" required/>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:22px">
+            <label for="notes" data-i18n="label_notes">Notes (Optional)</label>
+            <input type="text" id="notes" data-i18n-placeholder="placeholder_notes" placeholder="Call before delivery, any special requests..."/>
+          </div>
+          <button type="submit" class="submit-btn" id="submitBtn" disabled>
+            <span class="btn-text" data-i18n="submit_btn">⚡ Confirm My Order</span>
+            <span class="btn-loader" style="display:none" data-i18n="submit_loading">Placing Order...</span>
+          </button>
+          <p class="form-note" data-i18n="form_note">Add items to your cart to enable the order button.</p>
+
+          <!-- Checkout trust row -->
+          <div class="checkout-trust-row">
+            <span class="checkout-trust-pill" data-i18n="checkout_trust_secure">✔ Secure Order</span>
+            <span class="checkout-trust-pill" data-i18n="checkout_trust_cod">✔ Cash on Delivery</span>
+            <span class="checkout-trust-pill" data-i18n="checkout_trust_free">✔ Free Shipping</span>
+            <span class="checkout-trust-pill" data-i18n="checkout_trust_whatsapp">✔ WhatsApp Support</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="section-label" data-i18n="faq_label">Got Questions?</div>
+    <h2 class="section-title" data-i18n="faq_title">Frequently Asked Questions</h2>
+    <div class="faq-list" id="faqList"></div>
+  </div>
+</section>
+
+<!-- WARRANTY / POLICY -->
+<section class="warranty" id="warranty">
+  <div class="container">
+    <div class="warranty-grid" id="warrantyGrid"></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <img src="logo.png" alt="STAR97 logo" class="footer-logo-img" id="footerLogoImg" data-cms-image="footerLogo"/>
+        </div>
+        <p data-i18n="footer_brand_desc">Egypt's premium car accessories for professional drivers. Upgrade your setup today.</p>
+        <div class="social-links">
+          <a href="#" class="social-link" aria-label="Facebook" target="_blank" rel="noopener noreferrer" id="socialFacebook">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+          </a>
+          <a href="#" class="social-link" aria-label="Instagram" target="_blank" rel="noopener noreferrer" id="socialInstagram">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+          </a>
+          <a href="#" class="social-link" aria-label="TikTok" id="socialTiktok" target="_blank" rel="noopener noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.34 6.34 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>
+          </a>
+          <a id="footerWhatsApp" href="#" class="social-link whatsapp-link" aria-label="WhatsApp">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-links">
+        <h4 data-i18n="footer_products">Products</h4>
+        <ul>
+          <li><a href="#products" onclick="filterByCategory('Phone Mounts')" data-i18n="footer_phone_mounts">Phone Mounts</a></li>
+          <li><a href="#products" onclick="filterByCategory('Charging')" data-i18n="footer_charging">Charging</a></li>
+          <li><a href="#products" onclick="filterByCategory('Driver Bundles')" data-i18n="footer_bundles">Driver Bundles</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4 data-i18n="footer_col_bundles">Bundles</h4>
+        <ul>
+          <li><a href="#products" onclick="selectPackage('basic-driver-kit')" data-i18n="footer_basic_kit">Basic Driver Kit</a></li>
+          <li><a href="#products" onclick="selectPackage('pro-driver-kit')" data-i18n="footer_pro_kit">Pro Driver Kit</a></li>
+          <li><a href="#products" onclick="selectPackage('vip-driver-kit')" data-i18n="footer_vip_kit">VIP Driver Kit</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4 data-i18n="footer_help">Help</h4>
+        <ul>
+          <li><a href="#order" data-i18n="footer_place_order">Place an Order</a></li>
+          <li><a id="footerWaLink" href="#" data-i18n="footer_whatsapp">WhatsApp Us</a></li>
+          <li><a href="#faq" data-i18n="footer_faq">FAQ</a></li>
+          <li><a href="#warranty" data-i18n="footer_warranty">Warranty Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p data-i18n="footer_copy">© 2026 STAR — Magnetic Car Accessories. All rights reserved.</p>
+      <p data-i18n="footer_made">Made with ❤️ for Egyptian drivers</p>
+    </div>
+  </div>
+</footer>
+
+<!-- STICKY MOBILE CTA -->
+<div class="sticky-cta" id="stickyCta">
+  <a href="#order" class="sticky-cta-btn">
+    <span aria-hidden="true">+</span>
+    <span data-i18n="sticky_cta">Order Now - Free Delivery</span>
+  </a>
+</div>
+
+<!-- WHATSAPP FLOAT BUTTON -->
+<a class="whatsapp-float" id="waFloat" href="#" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp">
+  <!-- Tooltip -->
+  <span class="wa-tooltip" id="waTooltip" data-i18n="wa_float_tooltip">Order via WhatsApp</span>
+  <!-- WA Icon -->
+  <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+</a>
+
+<script>
+  // Interactive gallery helper functions
+  function showGalleryProduct(prodId, event) {
+    // Hide all product gallery groups
+    document.querySelectorAll('.gallery-product-group').forEach(group => {
+      group.classList.remove('active');
+    });
+    // Show selected product gallery group
+    const selectedGroup = document.getElementById(`gallery-${prodId}`);
+    if (selectedGroup) {
+      selectedGroup.classList.add('active');
+    }
+    // Update tab active state
+    document.querySelectorAll('.gallery-tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+  }
+
+  function changeGalleryMain(prodId, imgSrc, thumbEl) {
+    const mainImg = document.getElementById(`${prodId}-main-img`);
+    if (mainImg) {
+      mainImg.src = imgSrc;
+    }
+    // Update thumb active state
+    const thumbsContainer = thumbEl.parentElement;
+    thumbsContainer.querySelectorAll('.gallery-thumb-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    thumbEl.classList.add('active');
+  }
+</script>
+<script src="js/main.js"></script>
+</body>
+</html>
+

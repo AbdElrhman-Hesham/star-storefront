@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "star-storefront",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-21",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "routes": [
+    {
+      "pattern": "starshop97.com",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.starshop97.com",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "star-storefront",
+      "database_id": "REPLACE_WITH_YOUR_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "MEDIA",
+      "id": "REPLACE_WITH_YOUR_ID"
+    }
+  ],
+  "vars": {
+    "ADMIN_USERNAME": "admin"
+  }
+}
